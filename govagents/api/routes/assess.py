@@ -23,14 +23,47 @@ from govagents.core.models import (
     SSEEvent,
 )
 
+import os
+
 log = get_logger(__name__)
 
 router = APIRouter(prefix="/api/assess", tags=["assessments"])
 
-# In-memory assessment store (replace with DB for production)
+DATA_DIR = "data"
+ASSESSMENTS_FILE = os.path.join(DATA_DIR, "assessments.json")
+
+# Ensure data directory exists
+os.makedirs(DATA_DIR, exist_ok=True)
+
+# In-memory assessment store
 _assessments: dict[str, AssessmentRecord] = {}
 # SSE queues per assessment: assessment_id -> list of queues
 _sse_queues: dict[str, list[asyncio.Queue]] = {}
+
+
+def _load_assessments():
+    """Load assessments from disk."""
+    if os.path.exists(ASSESSMENTS_FILE):
+        try:
+            with open(ASSESSMENTS_FILE, "r") as f:
+                data = json.load(f)
+                for key, val in data.items():
+                    _assessments[key] = AssessmentRecord(**val)
+            log.info("assessments_loaded", count=len(_assessments))
+        except Exception as e:
+            log.error("failed_to_load_assessments", error=str(e))
+
+def _save_assessments():
+    """Save assessments to disk."""
+    try:
+        with open(ASSESSMENTS_FILE, "w") as f:
+            data = {k: v.model_dump(mode="json") for k, v in _assessments.items()}
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        log.error("failed_to_save_assessments", error=str(e))
+
+# Load on startup
+_load_assessments()
 
 
 @router.post("", response_model=AssessmentCreatedResponse, status_code=202)
@@ -52,6 +85,7 @@ async def create_assessment(
         sector=request.sector,
         deployment_context=request.deployment_context,
         technical_details=request.technical_details,
+        pipeline_config=request.pipeline_config,
     )
 
     record = AssessmentRecord(
@@ -61,6 +95,8 @@ async def create_assessment(
     )
     _assessments[record.id] = record
     _sse_queues[record.id] = []
+    
+    _save_assessments()
 
     # Run assessment in background
     background_tasks.add_task(_run_assessment_task, record.id)
@@ -108,6 +144,8 @@ async def _run_assessment_task(assessment_id: str) -> None:
         record.report = report
         record.status = AssessmentStatus.COMPLETED
         record.completed_at = datetime.now(timezone.utc)
+        
+        _save_assessments()
 
         log.info(
             "assessment_complete",
@@ -119,6 +157,8 @@ async def _run_assessment_task(assessment_id: str) -> None:
         log.error("assessment_failed", id=assessment_id, error=str(e), exc_info=True)
         record.status = AssessmentStatus.FAILED
         record.error = str(e)
+        
+        _save_assessments()
 
         # Send error event to all listeners
         error_event = SSEEvent(event="error", data={"error": str(e)})
@@ -233,3 +273,5 @@ async def delete_assessment(assessment_id: str) -> None:
         raise HTTPException(status_code=404, detail="Assessment not found")
     del _assessments[assessment_id]
     _sse_queues.pop(assessment_id, None)
+    
+    _save_assessments()

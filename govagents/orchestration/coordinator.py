@@ -79,65 +79,71 @@ class Coordinator:
         log.info("pipeline_start", proposal_id=proposal.id, title=proposal.title)
 
         try:
-            # ── Phase 1: Parallel Initial Analysis ──────────────────────────
-            await emit("phase_start", data={"phase": "initial_analysis", "phase_num": 1})
+            # ── DAG Execution (Parallel Paths) ────────────────────────────────
+            await emit("phase_start", data={"phase": "parallel_dag_execution", "phase_num": 1})
 
-            async def run_policy():
-                await emit("agent_start", agent="policy", data={"message": "Searching policy corpus..."})
-                result = await self.policy_agent.run(context)
-                await emit("agent_complete", agent="policy", data={
-                    "requirements": len(result.requirements),
-                    "message": f"Found {len(result.requirements)} applicable requirements"
-                })
-                return result
+            async def path_policy_compliance():
+                policy_out = None
+                if proposal.pipeline_config.policy.enabled:
+                    await emit("agent_start", agent="policy", data={"message": "Searching policy corpus..."})
+                    policy_out = await self.policy_agent.run(context)
+                    await emit("agent_complete", agent="policy", data={
+                        "requirements": len(policy_out.requirements),
+                        "message": f"Found {len(policy_out.requirements)} applicable requirements"
+                    })
+                
+                compliance_out = None
+                if proposal.pipeline_config.compliance.enabled:
+                    await emit("agent_start", agent="compliance", data={"message": "Checking compliance with requirements..."})
+                    compliance_out = await self.compliance_agent.run(context)
+                    await emit("agent_complete", agent="compliance", data={
+                        "status": compliance_out.overall_status.value,
+                        "score": round(compliance_out.overall_compliance_score, 2),
+                        "message": f"Compliance: {compliance_out.overall_status.value} ({compliance_out.overall_compliance_score:.0%})"
+                    })
+                return policy_out, compliance_out
 
-            async def run_risk():
-                await emit("agent_start", agent="risk", data={"message": "Analyzing risks..."})
-                result = await self.risk_agent.run(context)
-                await emit("agent_complete", agent="risk", data={
-                    "risk_level": result.overall_risk_level.value,
-                    "risks": len(result.risks),
-                    "message": f"Identified {len(result.risks)} risks — Overall: {result.overall_risk_level.value}"
-                })
-                return result
+            async def path_risk_ethics():
+                risk_out = None
+                if proposal.pipeline_config.risk.enabled:
+                    await emit("agent_start", agent="risk", data={"message": "Analyzing risks..."})
+                    risk_out = await self.risk_agent.run(context)
+                    await emit("agent_complete", agent="risk", data={
+                        "risk_level": risk_out.overall_risk_level.value,
+                        "risks": len(risk_out.risks),
+                        "message": f"Identified {len(risk_out.risks)} risks — Overall: {risk_out.overall_risk_level.value}"
+                    })
+                
+                ethics_out = None
+                if proposal.pipeline_config.ethics.enabled:
+                    await emit("agent_start", agent="ethics", data={"message": "Evaluating ethical dimensions..."})
+                    ethics_out = await self.ethics_agent.run(context)
+                    await emit("agent_complete", agent="ethics", data={
+                        "score": round(ethics_out.overall_score, 2),
+                        "dimensions": len(ethics_out.dimensions),
+                        "message": f"Ethics score: {ethics_out.overall_score:.0%}"
+                    })
+                return risk_out, ethics_out
 
-            async def run_technical():
-                await emit("agent_start", agent="technical", data={"message": "Analyzing technical architecture..."})
-                result = await self.technical_agent.run(context)
-                await emit("agent_complete", agent="technical", data={
-                    "findings": len(result.findings),
-                    "compliant": result.architecture_compliant,
-                    "message": f"Found {len(result.findings)} technical findings"
-                })
-                return result
+            async def path_technical():
+                technical_out = None
+                if proposal.pipeline_config.technical.enabled:
+                    await emit("agent_start", agent="technical", data={"message": "Analyzing technical architecture..."})
+                    technical_out = await self.technical_agent.run(context)
+                    await emit("agent_complete", agent="technical", data={
+                        "findings": len(technical_out.findings),
+                        "compliant": technical_out.architecture_compliant,
+                        "message": f"Found {len(technical_out.findings)} technical findings"
+                    })
+                return technical_out
 
-            # Run Policy, Risk, and Technical in parallel
-            policy_out, risk_out, technical_out = await asyncio.gather(
-                run_policy(),
-                run_risk(),
-                run_technical(),
+            # Run all configured DAG paths in parallel
+            await asyncio.gather(
+                path_policy_compliance(),
+                path_risk_ethics(),
+                path_technical(),
                 return_exceptions=False,
             )
-
-            # ── Phase 2: Compliance Assessment ──────────────────────────────
-            await emit("phase_start", data={"phase": "compliance_check", "phase_num": 2})
-            await emit("agent_start", agent="compliance", data={"message": "Checking compliance with requirements..."})
-            compliance_out = await self.compliance_agent.run(context)
-            await emit("agent_complete", agent="compliance", data={
-                "status": compliance_out.overall_status.value,
-                "score": round(compliance_out.overall_compliance_score, 2),
-                "message": f"Compliance: {compliance_out.overall_status.value} ({compliance_out.overall_compliance_score:.0%})"
-            })
-
-            # ── Phase 3: Ethics Assessment ───────────────────────────────────
-            await emit("phase_start", data={"phase": "ethics_assessment", "phase_num": 3})
-            await emit("agent_start", agent="ethics", data={"message": "Evaluating ethical dimensions..."})
-            ethics_out = await self.ethics_agent.run(context)
-            await emit("agent_complete", agent="ethics", data={
-                "score": round(ethics_out.overall_score, 2),
-                "dimensions": len(ethics_out.dimensions),
-                "message": f"Ethics score: {ethics_out.overall_score:.0%}"
-            })
 
             # ── Phase 4: Debate (if disagreements) ───────────────────────────
             debate_log = []
@@ -169,7 +175,9 @@ class Coordinator:
             elapsed = time.perf_counter() - start_time
             report.processing_time_seconds = elapsed
             report.total_tokens_used = self.llm.get_usage_stats()["total_tokens"]
-            report.completed_at = datetime.utcnow() if hasattr(report, "completed_at") else None
+            
+            if hasattr(report, "completed_at"):
+                report.completed_at = datetime.utcnow()
 
             await emit("agent_complete", agent="governance", data={
                 "decision": report.decision.value,

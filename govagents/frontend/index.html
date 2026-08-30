@@ -129,10 +129,128 @@
               <button type="button" class="example-chip" onclick="loadExample('chatbot')">Customer service chatbot</button>
             </div>
 
-            <div class="form-actions">
+            <!-- Advanced Configuration Dashboard -->
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+            <div style="margin-bottom: 1rem;">
+              <h3 style="color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+                Advanced Pipeline Configuration
+              </h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Fine-tune individual agent behaviors and orchestration parameters before running the assessment.</p>
+            </div>
+            
+            <div class="config-grid">
+              <!-- Policy Config -->
+              <div class="config-card" id="cardPolicy">
+                <div class="config-header">
+                  <div class="config-title"><span style="font-size: 1.2rem;">📋</span> Policy Agent</div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="cfgPolicyEnabled" checked onchange="toggleCard('cardPolicy', this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="config-body">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>Max Requirements to Extract: <span id="valPolicyMax">20</span></label>
+                    <input type="range" class="custom-range" id="cfgPolicyMax" min="5" max="50" step="5" value="20" oninput="document.getElementById('valPolicyMax').innerText = this.value">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Compliance Config -->
+              <div class="config-card" id="cardCompliance">
+                <div class="config-header">
+                  <div class="config-title"><span style="font-size: 1.2rem;">✅</span> Compliance Agent</div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="cfgComplianceEnabled" checked onchange="toggleCard('cardCompliance', this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="config-body">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>Evaluation Strictness</label>
+                    <select id="cfgComplianceStrictness" style="background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.1);">
+                      <option value="lenient">Lenient</option>
+                      <option value="normal" selected>Normal</option>
+                      <option value="strict">Strict</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Risk Config -->
+              <div class="config-card" id="cardRisk">
+                <div class="config-header">
+                  <div class="config-title"><span style="font-size: 1.2rem;">⚠️</span> Risk Agent</div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="cfgRiskEnabled" checked onchange="toggleCard('cardRisk', this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="config-body">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>Risk Tolerance Level</label>
+                    <select id="cfgRiskTolerance" style="background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.1);">
+                      <option value="low">Low (Identify minor risks)</option>
+                      <option value="medium" selected>Medium (Standard)</option>
+                      <option value="high">High (Only severe risks)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Ethics Config -->
+              <div class="config-card" id="cardEthics">
+                <div class="config-header">
+                  <div class="config-title"><span style="font-size: 1.2rem;">⚖️</span> Ethics Agent</div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="cfgEthicsEnabled" checked onchange="toggleCard('cardEthics', this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="config-body">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>Primary Focus Area</label>
+                    <select id="cfgEthicsFocus" style="background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.1);">
+                      <option value="all" selected>All Dimensions</option>
+                      <option value="bias">Bias & Fairness</option>
+                      <option value="transparency">Transparency</option>
+                      <option value="privacy">Privacy & Autonomy</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Technical Config -->
+              <div class="config-card" id="cardTechnical">
+                <div class="config-header">
+                  <div class="config-title"><span style="font-size: 1.2rem;">⚙️</span> Technical Agent</div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="cfgTechnicalEnabled" checked onchange="toggleCard('cardTechnical', this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="config-body">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>Analysis Depth</label>
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+                      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-primary);">
+                        <input type="radio" name="cfgTechScan" value="false" checked> Standard Scan
+                      </label>
+                      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-primary);">
+                        <input type="radio" name="cfgTechScan" value="true"> Deep Scan
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="form-actions" style="margin-top: 2rem;">
               <button type="submit" class="btn-primary" id="submitBtn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                Run Governance Assessment
+                <span class="btn-text">Run Governance Assessment</span>
+                <span class="btn-icon">→</span>
               </button>
             </div>
           </form>
@@ -153,20 +271,44 @@
         </div>
         <div class="card-body">
           <div class="pipeline-viz" id="pipelineViz">
-            <!-- Phase 1: Parallel -->
-            <div class="pipeline-phase">
-              <div class="phase-label">Phase 1 — Initial Analysis</div>
-              <div class="pipeline-row">
+            <div class="phase-label" style="margin-bottom: 1.5rem;">Parallel DAG Execution</div>
+            <div class="pipeline-dag" style="display: flex; justify-content: center; gap: 3rem; width: 100%; flex-wrap: wrap;">
+              
+              <!-- Path A -->
+              <div class="dag-path" id="dagPathA" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                <div class="path-label" style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Path A</div>
                 <div class="agent-node" id="agent-policy" data-agent="policy">
                   <div class="agent-icon">📋</div>
                   <div class="agent-name">Policy</div>
                   <div class="agent-status idle">Waiting</div>
                 </div>
+                <div class="pipeline-arrow" style="height: 20px;">↓</div>
+                <div class="agent-node" id="agent-compliance" data-agent="compliance">
+                  <div class="agent-icon">✅</div>
+                  <div class="agent-name">Compliance</div>
+                  <div class="agent-status idle">Waiting</div>
+                </div>
+              </div>
+
+              <!-- Path B -->
+              <div class="dag-path" id="dagPathB" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                <div class="path-label" style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Path B</div>
                 <div class="agent-node" id="agent-risk" data-agent="risk">
                   <div class="agent-icon">⚠️</div>
                   <div class="agent-name">Risk</div>
                   <div class="agent-status idle">Waiting</div>
                 </div>
+                <div class="pipeline-arrow" style="height: 20px;">↓</div>
+                <div class="agent-node" id="agent-ethics" data-agent="ethics">
+                  <div class="agent-icon">⚖️</div>
+                  <div class="agent-name">Ethics</div>
+                  <div class="agent-status idle">Waiting</div>
+                </div>
+              </div>
+
+              <!-- Path C -->
+              <div class="dag-path" id="dagPathC" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                <div class="path-label" style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Path C</div>
                 <div class="agent-node" id="agent-technical" data-agent="technical">
                   <div class="agent-icon">⚙️</div>
                   <div class="agent-name">Technical</div>
@@ -174,29 +316,13 @@
                 </div>
               </div>
             </div>
-            <!-- Arrow -->
-            <div class="pipeline-arrow">↓</div>
-            <!-- Phase 2-3 -->
-            <div class="pipeline-phase">
-              <div class="phase-label">Phase 2-3 — Deep Analysis</div>
-              <div class="pipeline-row">
-                <div class="agent-node" id="agent-compliance" data-agent="compliance">
-                  <div class="agent-icon">✅</div>
-                  <div class="agent-name">Compliance</div>
-                  <div class="agent-status idle">Waiting</div>
-                </div>
-                <div class="agent-node" id="agent-ethics" data-agent="ethics">
-                  <div class="agent-icon">⚖️</div>
-                  <div class="agent-name">Ethics</div>
-                  <div class="agent-status idle">Waiting</div>
-                </div>
-              </div>
+
+            <!-- Convergence -->
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; color: var(--text-muted); font-size: 1.2rem; font-weight: bold; animation: arrowPulse 2s ease-in-out infinite;">
+               ↘ &nbsp;&nbsp;&nbsp; ↓ &nbsp;&nbsp;&nbsp; ↙
             </div>
-            <!-- Arrow -->
-            <div class="pipeline-arrow">↓</div>
-            <!-- Phase 5: Governance -->
-            <div class="pipeline-phase">
-              <div class="phase-label">Phase 5 — Governance Decision</div>
+            <div class="pipeline-phase" style="margin-top: 1rem;">
+              <div class="phase-label">Convergence — Final Decision</div>
               <div class="pipeline-row">
                 <div class="agent-node governance-node" id="agent-governance" data-agent="governance">
                   <div class="agent-icon">🏛️</div>

@@ -107,6 +107,55 @@ class PolicyRequirement(BaseModel):
 # ── Proposal Models ───────────────────────────────────────────────────────────
 
 
+class PolicyConfig(BaseModel):
+    enabled: bool = True
+    max_requirements: int = 20
+
+class ComplianceConfig(BaseModel):
+    enabled: bool = True
+    strictness: str = "normal"  # lenient, normal, strict
+
+class RiskConfig(BaseModel):
+    enabled: bool = True
+    risk_tolerance: str = "medium"  # low, medium, high
+
+class EthicsConfig(BaseModel):
+    enabled: bool = True
+    focus_areas: list[str] = Field(default_factory=list)
+
+class TechnicalConfig(BaseModel):
+    enabled: bool = True
+    deep_scan: bool = False
+
+class PrivacyConfig(BaseModel):
+    enabled: bool = True
+    strict_gdpr: bool = True
+
+class SecurityConfig(BaseModel):
+    enabled: bool = True
+    threat_model: str = "standard"
+
+class BiasConfig(BaseModel):
+    enabled: bool = True
+    fairness_metric: str = "demographic_parity"
+
+class GuardrailConfig(BaseModel):
+    enabled: bool = True
+    strictness: str = "absolute"
+
+class PipelineConfig(BaseModel):
+    """Configuration for which pipeline paths to execute and their parameters."""
+    policy: PolicyConfig = Field(default_factory=PolicyConfig)
+    compliance: ComplianceConfig = Field(default_factory=ComplianceConfig)
+    risk: RiskConfig = Field(default_factory=RiskConfig)
+    ethics: EthicsConfig = Field(default_factory=EthicsConfig)
+    technical: TechnicalConfig = Field(default_factory=TechnicalConfig)
+    privacy: PrivacyConfig = Field(default_factory=PrivacyConfig)
+    security: SecurityConfig = Field(default_factory=SecurityConfig)
+    bias: BiasConfig = Field(default_factory=BiasConfig)
+    guardrail: GuardrailConfig = Field(default_factory=GuardrailConfig)
+
+
 class Proposal(BaseModel):
     """An AI system or deployment proposal to be assessed."""
 
@@ -119,6 +168,7 @@ class Proposal(BaseModel):
     technical_details: str | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     metadata: dict[str, Any] = Field(default_factory=dict)
+    pipeline_config: PipelineConfig = Field(default_factory=PipelineConfig)
 
 
 # ── Agent Assessment Models ───────────────────────────────────────────────────
@@ -163,9 +213,26 @@ class EthicsDimension(BaseModel):
 
 
 class TechnicalFinding(BaseModel):
-    """A technical architecture finding."""
+    component: str
+    description: str
+    severity: RiskLevel
+    recommendation: str
 
-    title: str
+class PrivacyFinding(BaseModel):
+    data_type: str
+    issue: str
+    severity: RiskLevel
+    gdpr_article: str | None = None
+
+class SecurityVulnerability(BaseModel):
+    component: str
+    vulnerability: str
+    severity: RiskLevel
+    cvss_estimate: float | None = None
+
+class BiasFinding(BaseModel):
+    affected_group: str
+    bias_type: str
     severity: RiskLevel
     description: str
     implication: str
@@ -207,6 +274,27 @@ class TechnicalAgentOutput(BaseModel):
     findings: list[TechnicalFinding]
     architecture_compliant: bool = False
     technical_debt: list[str] = Field(default_factory=list)
+    reasoning: str = ""
+
+class PrivacyAgentOutput(BaseModel):
+    findings: list[PrivacyFinding]
+    pii_handled: bool = False
+    data_minimization_score: float = Field(ge=0.0, le=1.0, default=0.5)
+    reasoning: str = ""
+
+class SecurityAgentOutput(BaseModel):
+    vulnerabilities: list[SecurityVulnerability]
+    overall_security_posture: str = "unknown"
+    reasoning: str = ""
+
+class BiasAgentOutput(BaseModel):
+    findings: list[BiasFinding]
+    fairness_score: float = Field(ge=0.0, le=1.0, default=0.5)
+    reasoning: str = ""
+
+class GuardrailAgentOutput(BaseModel):
+    triggered: bool = False
+    violations: list[str] = Field(default_factory=list)
     reasoning: str = ""
 
 
@@ -320,6 +408,7 @@ class AssessmentRequest(BaseModel):
     sector: str | None = None
     deployment_context: str | None = None
     technical_details: str | None = None
+    pipeline_config: PipelineConfig = Field(default_factory=PipelineConfig)
 
 
 class AssessmentStatus(str, Enum):

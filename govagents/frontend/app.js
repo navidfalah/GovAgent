@@ -121,6 +121,28 @@ async function submitAssessment(event) {
     sector: document.getElementById('propSector').value || null,
     deployment_context: document.getElementById('propContext').value.trim() || null,
     technical_details: document.getElementById('propTech').value.trim() || null,
+    pipeline_config: {
+      policy: {
+        enabled: document.getElementById('cfgPolicyEnabled').checked,
+        max_requirements: parseInt(document.getElementById('cfgPolicyMax').value, 10)
+      },
+      compliance: {
+        enabled: document.getElementById('cfgComplianceEnabled').checked,
+        strictness: document.getElementById('cfgComplianceStrictness').value
+      },
+      risk: {
+        enabled: document.getElementById('cfgRiskEnabled').checked,
+        risk_tolerance: document.getElementById('cfgRiskTolerance').value
+      },
+      ethics: {
+        enabled: document.getElementById('cfgEthicsEnabled').checked,
+        focus_areas: document.getElementById('cfgEthicsFocus').value === 'all' ? [] : [document.getElementById('cfgEthicsFocus').value]
+      },
+      technical: {
+        enabled: document.getElementById('cfgTechnicalEnabled').checked,
+        deep_scan: document.querySelector('input[name="cfgTechScan"]:checked').value === 'true'
+      }
+    }
   };
 
   try {
@@ -132,11 +154,26 @@ async function submitAssessment(event) {
 
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.detail || 'Failed to submit assessment');
+      let errorMsg = 'Failed to submit assessment';
+      if (err.detail) {
+        if (Array.isArray(err.detail)) {
+          errorMsg = err.detail.map(e => e.msg).join(', ');
+        } else {
+          errorMsg = err.detail;
+        }
+      }
+      throw new Error(errorMsg);
     }
 
     const data = await res.json();
     currentAssessmentId = data.assessment_id;
+
+    // Configure pipeline UI paths based on toggles
+    document.getElementById('agent-policy').style.opacity = payload.pipeline_config.policy.enabled ? '1' : '0.2';
+    document.getElementById('agent-compliance').style.opacity = payload.pipeline_config.compliance.enabled ? '1' : '0.2';
+    document.getElementById('agent-risk').style.opacity = payload.pipeline_config.risk.enabled ? '1' : '0.2';
+    document.getElementById('agent-ethics').style.opacity = payload.pipeline_config.ethics.enabled ? '1' : '0.2';
+    document.getElementById('agent-technical').style.opacity = payload.pipeline_config.technical.enabled ? '1' : '0.2';
 
     // Show pipeline, hide form
     document.getElementById('formCard').classList.add('hidden');
@@ -144,11 +181,12 @@ async function submitAssessment(event) {
 
     // Connect to SSE stream
     connectToStream(data.assessment_id);
-
+    
+    showToast('Assessment submitted successfully! Starting pipeline...', 'success');
     logActivity('system', 'Assessment pipeline started');
 
   } catch (err) {
-    alert(`Error: ${err.message}`);
+    showToast(`Error: ${err.message}`, 'error');
     btn.disabled = false;
     btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Run Governance Assessment`;
   }
@@ -159,6 +197,16 @@ function showPipeline() {
   const card = document.getElementById('pipelineCard');
   card.classList.remove('hidden');
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toggleCard(cardId, isEnabled) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  if (isEnabled) {
+    card.classList.remove('disabled');
+  } else {
+    card.classList.add('disabled');
+  }
 }
 
 function updateAgentState(agentName, state, message) {
@@ -218,8 +266,9 @@ function connectToStream(assessmentId) {
 
   evtSource.addEventListener('phase_start', (e) => {
     const d = JSON.parse(e.data);
-    updatePipelineStatus(`Phase ${d.phase_num}: ${d.phase.replace(/_/g, ' ')}`);
-    logActivity('system', `▶ Phase ${d.phase_num}: ${d.phase.replace(/_/g, ' ')}`);
+    const phaseName = d.phase.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    updatePipelineStatus(d.phase_num ? `Phase ${d.phase_num}: ${phaseName}` : phaseName);
+    logActivity('system', `▶ ${d.phase_num ? `Phase ${d.phase_num}: ` : ''}${phaseName}`);
   });
 
   evtSource.addEventListener('agent_start', (e) => {
@@ -268,6 +317,7 @@ function connectToStream(assessmentId) {
     logActivity('system', `❌ Error: ${msg}`);
     evtSource.close();
     updatePipelineStatus('Assessment failed', true);
+    showToast(`Pipeline Error: ${msg}`, 'error');
     restoreForm();
   });
 
@@ -707,6 +757,26 @@ async function loadPolicies() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  
+  let icon = 'ℹ️';
+  if (type === 'error') icon = '❌';
+  if (type === 'success') icon = '✅';
+  if (type === 'warning') icon = '⚠️';
+  
+  toast.innerHTML = `<strong style="margin-right:8px;">${icon}</strong> ${escapeHtml(message)}`;
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'toastSlideOut 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+    setTimeout(() => toast.remove(), 400);
+  }, 4000);
+}
+
 function restoreForm() {
   document.getElementById('formCard').classList.remove('hidden');
   document.getElementById('pipelineCard').classList.add('hidden');

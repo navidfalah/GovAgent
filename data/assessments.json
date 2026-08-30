@@ -1,0 +1,241 @@
+{
+  "75e97165-4a29-4846-8e05-ce02ed8eb9db": {
+    "id": "75e97165-4a29-4846-8e05-ce02ed8eb9db",
+    "proposal": {
+      "id": "75e97165-4a29-4846-8e05-ce02ed8eb9db",
+      "title": "Pipeline Customize Test",
+      "description": "This is another test description that is longer than twenty characters to ensure valid completion.",
+      "organization": "Test Org",
+      "sector": null,
+      "deployment_context": null,
+      "technical_details": null,
+      "created_at": "2026-08-30T18:15:13.176059",
+      "metadata": {},
+      "pipeline_config": {
+        "policy": {
+          "enabled": true,
+          "max_requirements": 20
+        },
+        "compliance": {
+          "enabled": true,
+          "strictness": "normal"
+        },
+        "risk": {
+          "enabled": true,
+          "risk_tolerance": "medium"
+        },
+        "ethics": {
+          "enabled": true,
+          "focus_areas": []
+        },
+        "technical": {
+          "enabled": true,
+          "deep_scan": false
+        }
+      }
+    },
+    "status": "completed",
+    "report": {
+      "id": "35c05cad-9d3a-4c1d-aaf3-efe267b25943",
+      "proposal_id": "75e97165-4a29-4846-8e05-ce02ed8eb9db",
+      "proposal_title": "Pipeline Customize Test",
+      "decision": "ABSTAINED",
+      "overall_risk": "HIGH",
+      "compliance_confidence": 0.5,
+      "uncertainty": "MODERATE",
+      "policy_output": {
+        "requirements": [],
+        "search_queries": [
+          "requirements for This is another test description that is longer than twenty characters to ensure valid completion.",
+          "transparency explainability AI system requirements",
+          "human oversight control AI automated decision making",
+          "data protection privacy AI processing personal data",
+          "risk management AI high risk system",
+          "accountability auditability AI system governance"
+        ],
+        "total_policies_searched": 20,
+        "reasoning": ""
+      },
+      "compliance_output": null,
+      "risk_output": null,
+      "ethics_output": null,
+      "technical_output": null,
+      "key_issues": [],
+      "required_actions": [],
+      "evidence_citations": [],
+      "governance_reasoning": "",
+      "debate_rounds": [],
+      "agent_disagreements": [],
+      "created_at": "2026-08-30T18:15:51.296246",
+      "processing_time_seconds": 38.113494040997466,
+      "total_tokens_used": 12779,
+      "agent_messages": [
+        {
+          "id": "37cd7673-45d4-46b0-a0c5-10ee2e416de4",
+          "sender": "policy",
+          "receiver": null,
+          "type": "response",
+          "topic": "policy_requirements",
+          "content": {
+            "requirement_count": 0,
+            "reasoning": ""
+          },
+          "timestamp": "2026-08-30T18:15:30.952502",
+          "in_reply_to": null
+        }
+      ]
+    },
+    "error": null,
+    "created_at": "2026-08-30T18:15:13.176074",
+    "completed_at": "2026-08-30T18:15:51.296837Z"
+  },
+  "69293d18-24d8-4e2b-98cc-b7a977132458": {
+    "id": "69293d18-24d8-4e2b-98cc-b7a977132458",
+    "proposal": {
+      "id": "69293d18-24d8-4e2b-98cc-b7a977132458",
+      "title": "AI Medical Diagnosis Assistant",
+      "description": "A hospital network plans to deploy an AI system that analyzes medical imaging (X-rays, CT scans) to assist radiologists in diagnosing lung cancer. The system produces confidence-scored diagnoses that are flagged for radiologist review. High-confidence negative results may be released without additional review in non-critical cases.",
+      "organization": "HealthNet Hospital Group",
+      "sector": "healthcare",
+      "deployment_context": "Radiology departments in 12 EU hospitals processing 500+ scans daily",
+      "technical_details": "CNN-based image classification (ResNet-50 fine-tuned). Integrated into PACS. 94% sensitivity on internal test set. FDA 510(k) clearance pending.",
+      "created_at": "2026-08-30T18:18:59.823215",
+      "metadata": {},
+      "pipeline_config": {
+        "policy": {
+          "enabled": true,
+          "max_requirements": 30
+        },
+        "compliance": {
+          "enabled": true,
+          "strictness": "normal"
+        },
+        "risk": {
+          "enabled": true,
+          "risk_tolerance": "medium"
+        },
+        "ethics": {
+          "enabled": true,
+          "focus_areas": []
+        },
+        "technical": {
+          "enabled": true,
+          "deep_scan": false
+        }
+      }
+    },
+    "status": "completed",
+    "report": {
+      "id": "4e4cbcae-07df-4a05-9025-bb39f77afd77",
+      "proposal_id": "69293d18-24d8-4e2b-98cc-b7a977132458",
+      "proposal_title": "AI Medical Diagnosis Assistant",
+      "decision": "ABSTAINED",
+      "overall_risk": "HIGH",
+      "compliance_confidence": 0.5,
+      "uncertainty": "MODERATE",
+      "policy_output": {
+        "requirements": [],
+        "search_queries": [
+          "requirements for A hospital network plans to deploy an AI system that analyzes medical imaging (X-rays, CT scans) to assist radiologists in diagnosing lung cancer. The system produces confidence-scored diagnoses that ",
+          "transparency explainability AI system requirements",
+          "human oversight control AI automated decision making",
+          "data protection privacy AI processing personal data",
+          "risk management AI high risk system",
+          "accountability auditability AI system governance",
+          "healthcare sector AI regulations requirements",
+          "Radiology departments in 12 EU hospitals processing 500+ scans daily AI governance obligations"
+        ],
+        "total_policies_searched": 19,
+        "reasoning": ""
+      },
+      "compliance_output": null,
+      "risk_output": {
+        "risks": [],
+        "overall_risk_level": "MEDIUM",
+        "risk_score": 0.5,
+        "reasoning": ""
+      },
+      "ethics_output": {
+        "dimensions": [],
+        "overall_score": 0.0,
+        "sovereignty_concerns": [],
+        "reasoning": ""
+      },
+      "technical_output": {
+        "findings": [],
+        "architecture_compliant": false,
+        "technical_debt": [],
+        "reasoning": ""
+      },
+      "key_issues": [],
+      "required_actions": [],
+      "evidence_citations": [],
+      "governance_reasoning": "",
+      "debate_rounds": [],
+      "agent_disagreements": [],
+      "created_at": "2026-08-30T18:19:57.835521",
+      "processing_time_seconds": 58.000020833002054,
+      "total_tokens_used": 27911,
+      "agent_messages": [
+        {
+          "id": "630393de-bb22-46d3-930c-e44eb1e2167d",
+          "sender": "policy",
+          "receiver": null,
+          "type": "response",
+          "topic": "policy_requirements",
+          "content": {
+            "requirement_count": 0,
+            "reasoning": ""
+          },
+          "timestamp": "2026-08-30T18:19:18.853491",
+          "in_reply_to": null
+        },
+        {
+          "id": "d315a2f0-1e6f-4f8a-8a83-f8d17328964f",
+          "sender": "risk",
+          "receiver": null,
+          "type": "response",
+          "topic": "risk_assessment",
+          "content": {
+            "overall_risk": "MEDIUM",
+            "risk_count": 0,
+            "critical_risks": 0
+          },
+          "timestamp": "2026-08-30T18:19:20.055054",
+          "in_reply_to": null
+        },
+        {
+          "id": "7d647289-7288-4cc0-8de3-c567da8e62a5",
+          "sender": "technical",
+          "receiver": null,
+          "type": "response",
+          "topic": "technical_assessment",
+          "content": {
+            "findings_count": 0,
+            "architecture_compliant": false,
+            "critical_findings": 0
+          },
+          "timestamp": "2026-08-30T18:19:20.200216",
+          "in_reply_to": null
+        },
+        {
+          "id": "4f7e40b4-35dd-4be5-b97a-bf4087150c29",
+          "sender": "ethics",
+          "receiver": null,
+          "type": "response",
+          "topic": "ethics_assessment",
+          "content": {
+            "overall_score": 0.0,
+            "dimensions_assessed": 0,
+            "sovereignty_concerns": 0
+          },
+          "timestamp": "2026-08-30T18:19:39.066302",
+          "in_reply_to": null
+        }
+      ]
+    },
+    "error": null,
+    "created_at": "2026-08-30T18:18:59.823232",
+    "completed_at": "2026-08-30T18:19:57.835913Z"
+  }
+}

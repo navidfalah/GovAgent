@@ -94,35 +94,43 @@ class LLMClient:
         messages: list[dict[str, str]],
         model: str | None = None,
         temperature: float | None = None,
+        require_cot: bool = True,
     ) -> dict[str, Any]:
-        """Call the LLM and parse the response as JSON."""
-        # Append JSON instruction to system message if not already there
+        """Call the LLM and parse the response as JSON.
+        
+        Args:
+            require_cot: If True, instructs the model to reason inside <thought>...</thought> blocks before outputting JSON.
+        """
         enhanced = list(messages)
         system_msgs = [m for m in enhanced if m.get("role") == "system"]
+        
+        instructions = "IMPORTANT: You MUST respond with valid JSON only. No markdown, no explanation outside the JSON."
+        if require_cot:
+            instructions = (
+                "IMPORTANT: You must first reason about the problem step-by-step inside a <thought>...</thought> block. "
+                "After the </thought> tag, output ONLY valid JSON matching the requested schema. No other text."
+            )
+
         if system_msgs:
             idx = enhanced.index(system_msgs[0])
-            if "JSON" not in enhanced[idx]["content"]:
+            if "IMPORTANT:" not in enhanced[idx]["content"]:
                 enhanced[idx] = {
                     "role": "system",
-                    "content": enhanced[idx]["content"]
-                    + "\n\nIMPORTANT: You MUST respond with valid JSON only. No markdown, no explanation outside the JSON.",
+                    "content": enhanced[idx]["content"] + f"\n\n{instructions}",
                 }
         else:
-            enhanced.insert(
-                0,
-                {
-                    "role": "system",
-                    "content": "IMPORTANT: You MUST respond with valid JSON only. No markdown, no explanation outside the JSON.",
-                },
-            )
+            enhanced.insert(0, {"role": "system", "content": instructions})
 
         text = await self.complete(enhanced, model=model, temperature=temperature)
         return self._parse_json(text)
 
     def _parse_json(self, text: str) -> dict[str, Any]:
-        """Extract and parse JSON from LLM output, handling markdown code blocks."""
+        """Extract and parse JSON from LLM output, handling Chain-of-Thought blocks."""
+        # Remove <thought> blocks
+        text = re.sub(r"<thought>.*?</thought>", "", text, flags=re.DOTALL)
+        
         # Try to extract from ```json ... ``` blocks
-        match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+        match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, flags=re.DOTALL)
         if match:
             text = match.group(1)
 
@@ -133,7 +141,7 @@ class LLMClient:
             pass
 
         # Try finding the first {...} block
-        brace_match = re.search(r"\{.*\}", text, re.DOTALL)
+        brace_match = re.search(r"\{.*\}", text, flags=re.DOTALL)
         if brace_match:
             try:
                 return json.loads(brace_match.group())

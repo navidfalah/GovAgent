@@ -1,0 +1,29 @@
+# GovAgents Default Configuration
+# These values are overridden by environment variables and .env file
+
+llm_provider: gemini
+llm_model: "gemini/gemini-2.0-flash"
+llm_temperature: 0.1
+llm_max_tokens: 4096
+llm_timeout: 120
+
+chroma_path: "./data/chroma"
+chroma_collection: "govagents_policies"
+
+embedding_model: "all-MiniLM-L6-v2"
+
+retrieval_top_k: 5
+policy_sources_path: "govagents/policies/sources"
+
+abstention_threshold: 0.45
+max_debate_rounds: 2
+disagreement_threshold: 0.3
+
+api_host: "0.0.0.0"
+api_port: 8000
+api_cors_origins: ["*"]
+
+log_level: "INFO"
+log_format: "console"
+
+assessments_path: "./data/assessments"

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "govagents"
@@ -12,7 +12,7 @@ license = {text = "MIT"}
 
 dependencies = [
     # LLM
-    "litellm>=1.40.0",
+    "litellm>=1.40.0,<1.52.0",
     "google-generativeai>=0.7.0",
 
     # API

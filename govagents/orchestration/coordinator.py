@@ -51,6 +51,10 @@ class Coordinator:
         self.technical_agent = registry.get_agent_class("TechnicalAgent")(llm_client=self.llm)
         self.compliance_agent = registry.get_agent_class("ComplianceAgent")(llm_client=self.llm)
         self.ethics_agent = registry.get_agent_class("EthicsAgent")(llm_client=self.llm)
+        self.privacy_agent = registry.get_agent_class("PrivacyAgent")(llm_client=self.llm)
+        self.security_agent = registry.get_agent_class("SecurityAgent")(llm_client=self.llm)
+        self.bias_agent = registry.get_agent_class("BiasAgent")(llm_client=self.llm)
+        self.guardrail_agent = registry.get_agent_class("GuardrailAgent")(llm_client=self.llm)
         self.governance_agent = registry.get_agent_class("GovernanceAgent")(llm_client=self.llm)
 
     async def assess(
@@ -86,7 +90,7 @@ class Coordinator:
                 policy_out = None
                 if proposal.pipeline_config.policy.enabled:
                     await emit("agent_start", agent="policy", data={"message": "Searching policy corpus..."})
-                    policy_out = await self.policy_agent.run(context)
+                    policy_out = await self.policy_agent.run(context, emit_callback=emit)
                     await emit("agent_complete", agent="policy", data={
                         "requirements": len(policy_out.requirements),
                         "message": f"Found {len(policy_out.requirements)} applicable requirements"
@@ -95,7 +99,7 @@ class Coordinator:
                 compliance_out = None
                 if proposal.pipeline_config.compliance.enabled:
                     await emit("agent_start", agent="compliance", data={"message": "Checking compliance with requirements..."})
-                    compliance_out = await self.compliance_agent.run(context)
+                    compliance_out = await self.compliance_agent.run(context, emit_callback=emit)
                     await emit("agent_complete", agent="compliance", data={
                         "status": compliance_out.overall_status.value,
                         "score": round(compliance_out.overall_compliance_score, 2),
@@ -107,7 +111,7 @@ class Coordinator:
                 risk_out = None
                 if proposal.pipeline_config.risk.enabled:
                     await emit("agent_start", agent="risk", data={"message": "Analyzing risks..."})
-                    risk_out = await self.risk_agent.run(context)
+                    risk_out = await self.risk_agent.run(context, emit_callback=emit)
                     await emit("agent_complete", agent="risk", data={
                         "risk_level": risk_out.overall_risk_level.value,
                         "risks": len(risk_out.risks),
@@ -117,7 +121,7 @@ class Coordinator:
                 ethics_out = None
                 if proposal.pipeline_config.ethics.enabled:
                     await emit("agent_start", agent="ethics", data={"message": "Evaluating ethical dimensions..."})
-                    ethics_out = await self.ethics_agent.run(context)
+                    ethics_out = await self.ethics_agent.run(context, emit_callback=emit)
                     await emit("agent_complete", agent="ethics", data={
                         "score": round(ethics_out.overall_score, 2),
                         "dimensions": len(ethics_out.dimensions),
@@ -129,21 +133,68 @@ class Coordinator:
                 technical_out = None
                 if proposal.pipeline_config.technical.enabled:
                     await emit("agent_start", agent="technical", data={"message": "Analyzing technical architecture..."})
-                    technical_out = await self.technical_agent.run(context)
+                    technical_out = await self.technical_agent.run(context, emit_callback=emit)
                     await emit("agent_complete", agent="technical", data={
                         "findings": len(technical_out.findings),
                         "compliant": technical_out.architecture_compliant,
                         "message": f"Found {len(technical_out.findings)} technical findings"
                     })
                 return technical_out
+                
+            async def path_security():
+                sec_out = None
+                if proposal.pipeline_config.security.enabled:
+                    await emit("agent_start", agent="security", data={"message": "Analyzing security threats..."})
+                    sec_out = await self.security_agent.run(context, emit_callback=emit)
+                    await emit("agent_complete", agent="security", data={
+                        "message": f"Security posture: {sec_out.overall_security_posture}"
+                    })
+                return sec_out
+
+            async def path_privacy():
+                priv_out = None
+                if proposal.pipeline_config.privacy.enabled:
+                    await emit("agent_start", agent="privacy", data={"message": "Analyzing privacy compliance..."})
+                    priv_out = await self.privacy_agent.run(context, emit_callback=emit)
+                    await emit("agent_complete", agent="privacy", data={
+                        "message": f"Privacy findings: {len(priv_out.findings)}"
+                    })
+                return priv_out
+
+            async def path_bias():
+                bias_out = None
+                if proposal.pipeline_config.bias.enabled:
+                    await emit("agent_start", agent="bias", data={"message": "Evaluating algorithmic bias..."})
+                    bias_out = await self.bias_agent.run(context, emit_callback=emit)
+                    await emit("agent_complete", agent="bias", data={
+                        "message": f"Fairness score: {bias_out.fairness_score:.0%}"
+                    })
+                return bias_out
 
             # Run all configured DAG paths in parallel
             await asyncio.gather(
                 path_policy_compliance(),
                 path_risk_ethics(),
                 path_technical(),
+                path_security(),
+                path_privacy(),
+                path_bias(),
                 return_exceptions=False,
             )
+            
+            # Guardrail Agent checks absolute red lines
+            if proposal.pipeline_config.guardrail.enabled:
+                await emit("agent_start", agent="guardrail", data={"message": "Checking absolute red lines..."})
+                guard_out = await self.guardrail_agent.run(context, emit_callback=emit)
+                if guard_out.triggered:
+                    await emit("agent_complete", agent="guardrail", data={
+                        "message": f"GUARDRAIL TRIGGERED: {len(guard_out.violations)} violation(s)"
+                    })
+                    # TODO: Fast fail pipeline if guardrail triggers
+                else:
+                    await emit("agent_complete", agent="guardrail", data={
+                        "message": "No red lines triggered."
+                    })
 
             # ── Phase 4: Debate (if disagreements) ───────────────────────────
             debate_log = []
@@ -163,7 +214,7 @@ class Coordinator:
             # ── Phase 5: Governance Decision ──────────────────────────────────
             await emit("phase_start", data={"phase": "governance_decision", "phase_num": 5})
             await emit("agent_start", agent="governance", data={"message": "Synthesizing final governance decision..."})
-            report = await self.governance_agent.run(context)
+            report = await self.governance_agent.run(context, emit_callback=emit)
 
             # Add debate outcomes to report
             if debate_log:

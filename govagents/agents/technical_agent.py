@@ -1,3 +1,4 @@
+from typing import Callable
 """Technical Agent — analyzes the proposed architecture for technical compliance gaps."""
 
 from __future__ import annotations
@@ -57,7 +58,7 @@ A finding is HIGH if it creates significant compliance risk.
 
 You MUST respond with valid JSON following the exact schema specified."""
 
-    async def run(self, context: AgentContext) -> TechnicalAgentOutput:
+    async def run(self, context: AgentContext, emit_callback: Callable = None) -> TechnicalAgentOutput:
         proposal = context.proposal
         requirements = context.retrieved_requirements
 
@@ -109,6 +110,15 @@ Respond with this JSON structure:
 
 Identify 4-10 specific technical findings. Focus on governance-relevant technical gaps."""
 
+
+        # --- Sub-Agent Planning & Research ---
+        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
+        if research_results:
+            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
+            for r in research_results:
+                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
+            user_prompt += f"\n\n{research_text}"
+        # ------------------------------------
         self.log.info("technical_agent_analyzing")
 
         raw = await self.llm.complete_json(
@@ -132,6 +142,7 @@ Identify 4-10 specific technical findings. Focus on governance-relevant technica
                 self.log.warning("finding_parse_error", error=str(e), data=f)
 
         output = TechnicalAgentOutput(
+            research=research_results,
             findings=findings,
             architecture_compliant=bool(raw.get("architecture_compliant", False)),
             technical_debt=raw.get("technical_debt", []),
@@ -152,6 +163,15 @@ Identify 4-10 specific technical findings. Focus on governance-relevant technica
             },
         )
 
+
+        # --- Sub-Agent Planning & Research ---
+        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
+        if research_results:
+            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
+            for r in research_results:
+                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
+            user_prompt += f"\n\n{research_text}"
+        # ------------------------------------
         self.log.info(
             "technical_agent_complete",
             findings=len(findings),

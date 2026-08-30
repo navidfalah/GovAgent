@@ -1,3 +1,4 @@
+from typing import Callable
 """Policy Agent — identifies relevant governance requirements from the policy corpus."""
 
 from __future__ import annotations
@@ -48,7 +49,7 @@ Your output should be grounded in the retrieved policy chunks provided to you.
 
 You MUST respond with valid JSON following the exact schema specified."""
 
-    async def run(self, context: AgentContext) -> PolicyAgentOutput:
+    async def run(self, context: AgentContext, emit_callback: Callable = None) -> PolicyAgentOutput:
         from govagents.policies.retrieval import get_retriever
 
         proposal = context.proposal

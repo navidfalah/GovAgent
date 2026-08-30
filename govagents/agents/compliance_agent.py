@@ -1,3 +1,4 @@
+from typing import Callable
 """Compliance Agent — evaluates whether the proposal satisfies policy requirements."""
 
 from __future__ import annotations
@@ -53,7 +54,7 @@ Confidence levels should reflect actual certainty (0.0-1.0):
 
 You MUST respond with valid JSON following the exact schema specified."""
 
-    async def run(self, context: AgentContext) -> ComplianceAgentOutput:
+    async def run(self, context: AgentContext, emit_callback: Callable = None) -> ComplianceAgentOutput:
         requirements = context.retrieved_requirements
         proposal = context.proposal
 

@@ -1,3 +1,4 @@
+from typing import Callable
 """Governance Agent — synthesizes all agent outputs into a final governance decision."""
 
 from __future__ import annotations
@@ -57,7 +58,7 @@ Key principles:
 
 You MUST respond with valid JSON following the exact schema specified."""
 
-    async def run(self, context: AgentContext) -> GovernanceReport:
+    async def run(self, context: AgentContext, emit_callback: Callable = None) -> GovernanceReport:
         proposal = context.proposal
 
         # Build comprehensive summary of all agent outputs

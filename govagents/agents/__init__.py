@@ -7,6 +7,10 @@ from govagents.agents.governance_agent import GovernanceAgent
 from govagents.agents.policy_agent import PolicyAgent
 from govagents.agents.risk_agent import RiskAgent
 from govagents.agents.technical_agent import TechnicalAgent
+from govagents.agents.privacy_agent import PrivacyAgent
+from govagents.agents.security_agent import SecurityAgent
+from govagents.agents.bias_agent import BiasAgent
+from govagents.agents.guardrail_agent import GuardrailAgent
 
 __all__ = [
     "BaseAgent",
@@ -16,4 +20,8 @@ __all__ = [
     "PolicyAgent",
     "RiskAgent",
     "TechnicalAgent",
+    "PrivacyAgent",
+    "SecurityAgent",
+    "BiasAgent",
+    "GuardrailAgent",
 ]

@@ -1,3 +1,4 @@
+from typing import Callable
 """Ethics & Sovereignty Agent — evaluates ethical and digital sovereignty dimensions."""
 
 from __future__ import annotations
@@ -64,7 +65,7 @@ Be particularly attentive to:
 
 You MUST respond with valid JSON following the exact schema specified."""
 
-    async def run(self, context: AgentContext) -> EthicsAgentOutput:
+    async def run(self, context: AgentContext, emit_callback: Callable = None) -> EthicsAgentOutput:
         proposal = context.proposal
         risk_summary = ""
         if context.risk_output:
@@ -171,6 +172,15 @@ Respond with this JSON structure:
 
 You MUST assess all 7 dimensions: transparency, accountability, privacy, human_oversight, fairness, autonomy, digital_sovereignty"""
 
+
+        # --- Sub-Agent Planning & Research ---
+        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
+        if research_results:
+            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
+            for r in research_results:
+                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
+            user_prompt += f"\n\n{research_text}"
+        # ------------------------------------
         self.log.info("ethics_agent_evaluating")
 
         raw = await self.llm.complete_json(
@@ -199,6 +209,7 @@ You MUST assess all 7 dimensions: transparency, accountability, privacy, human_o
             overall_score = sum(d.score for d in dimensions) / len(dimensions)
 
         output = EthicsAgentOutput(
+            research=research_results,
             dimensions=dimensions,
             overall_score=overall_score,
             sovereignty_concerns=raw.get("sovereignty_concerns", []),
@@ -217,6 +228,15 @@ You MUST assess all 7 dimensions: transparency, accountability, privacy, human_o
             },
         )
 
+
+        # --- Sub-Agent Planning & Research ---
+        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
+        if research_results:
+            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
+            for r in research_results:
+                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
+            user_prompt += f"\n\n{research_text}"
+        # ------------------------------------
         self.log.info(
             "ethics_agent_complete",
             score=overall_score,

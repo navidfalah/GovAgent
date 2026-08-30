@@ -141,6 +141,22 @@ async function submitAssessment(event) {
       technical: {
         enabled: document.getElementById('cfgTechnicalEnabled').checked,
         deep_scan: document.querySelector('input[name="cfgTechScan"]:checked').value === 'true'
+      },
+      privacy: {
+        enabled: document.getElementById('cfgPrivacyEnabled').checked,
+        strict_gdpr: document.querySelector('input[name="cfgPrivacyGdpr"]:checked').value === 'true'
+      },
+      security: {
+        enabled: document.getElementById('cfgSecurityEnabled').checked,
+        threat_model: document.getElementById('cfgSecurityThreat').value
+      },
+      bias: {
+        enabled: document.getElementById('cfgBiasEnabled').checked,
+        fairness_metric: document.getElementById('cfgBiasMetric').value
+      },
+      guardrail: {
+        enabled: document.getElementById('cfgGuardrailEnabled').checked,
+        strictness: document.getElementById('cfgGuardrailAction').value
       }
     }
   };
@@ -174,6 +190,10 @@ async function submitAssessment(event) {
     document.getElementById('agent-risk').style.opacity = payload.pipeline_config.risk.enabled ? '1' : '0.2';
     document.getElementById('agent-ethics').style.opacity = payload.pipeline_config.ethics.enabled ? '1' : '0.2';
     document.getElementById('agent-technical').style.opacity = payload.pipeline_config.technical.enabled ? '1' : '0.2';
+    document.getElementById('agent-security').style.opacity = payload.pipeline_config.security.enabled ? '1' : '0.2';
+    document.getElementById('agent-privacy').style.opacity = payload.pipeline_config.privacy.enabled ? '1' : '0.2';
+    document.getElementById('agent-bias').style.opacity = payload.pipeline_config.bias.enabled ? '1' : '0.2';
+    document.getElementById('agent-guardrail').style.opacity = payload.pipeline_config.guardrail.enabled ? '1' : '0.2';
 
     // Show pipeline, hide form
     document.getElementById('formCard').classList.add('hidden');
@@ -284,6 +304,42 @@ function connectToStream(assessmentId) {
     if (d.agent) {
       updateAgentState(d.agent, 'complete');
       logActivity(d.agent, `✓ ${d.message || 'Complete'}`);
+      
+      // Hide subagent UI if any
+      const subagentNode = document.getElementById(`subagent-${d.agent}`);
+      if (subagentNode) {
+        subagentNode.style.display = 'none';
+      }
+    }
+  });
+
+  evtSource.addEventListener('subagent_spawned', (e) => {
+    const d = JSON.parse(e.data);
+    if (d.agent) {
+      logActivity(`${d.agent}-sub`, `🔍 Searching: ${d.query}`);
+      // Show subagent node
+      const parentNode = document.getElementById(`agent-${d.agent}`);
+      if (parentNode) {
+        let subNode = document.getElementById(`subagent-${d.agent}`);
+        if (!subNode) {
+          subNode = document.createElement('div');
+          subNode.id = `subagent-${d.agent}`;
+          subNode.className = 'subagent-node';
+          subNode.innerHTML = `
+            <div class="spinner" style="width: 10px; height: 10px; border-width: 2px; display: inline-block;"></div>
+            <span style="font-size: 0.6rem; color: var(--text-muted);">Researching...</span>
+          `;
+          parentNode.appendChild(subNode);
+        }
+        subNode.style.display = 'flex';
+      }
+    }
+  });
+
+  evtSource.addEventListener('subagent_complete', (e) => {
+    const d = JSON.parse(e.data);
+    if (d.agent) {
+      logActivity(`${d.agent}-sub`, `✅ Found ${d.findings} facts (Certainty: ${d.certainty}) for: ${d.query}`);
     }
   });
 
@@ -432,36 +488,29 @@ function renderReport(report) {
 
         <!-- Tabs -->
         <div class="tabs" id="reportTabs">
-          <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
-          <button class="tab-btn" onclick="switchTab('compliance')">Compliance ${report.compliance_output ? `(${report.compliance_output.requirement_assessments?.length || 0})` : ''}</button>
-          <button class="tab-btn" onclick="switchTab('risks')">Risks ${report.risk_output ? `(${report.risk_output.risks?.length || 0})` : ''}</button>
-          <button class="tab-btn" onclick="switchTab('ethics')">Ethics</button>
-          <button class="tab-btn" onclick="switchTab('technical')">Technical ${report.technical_output ? `(${report.technical_output.findings?.length || 0})` : ''}</button>
+          <button class="tab-btn active" onclick="switchResultTab('tab-gov')">Overview</button>
+          <button class="tab-btn" onclick="switchResultTab('tab-policy')">Policy</button>
+          <button class="tab-btn" onclick="switchResultTab('tab-compliance')">Compliance</button>
+          <button class="tab-btn" onclick="switchResultTab('tab-risk')">Risks</button>
+          <button class="tab-btn" onclick="switchResultTab('tab-ethics')">Ethics</button>
+          <button class="tab-btn" onclick="switchResultTab('tab-bias')">Bias</button>
+          <button class="tab-btn" onclick="switchResultTab('tab-technical')">Technical</button>
+          <button class="tab-btn" onclick="switchResultTab('tab-security')">Security</button>
+          <button class="tab-btn" onclick="switchResultTab('tab-privacy')">Privacy</button>
+          <button class="tab-btn" onclick="switchResultTab('tab-guardrail')">Guardrail</button>
         </div>
 
-        <!-- Overview Tab -->
-        <div class="tab-panel active" id="tab-overview">
-          ${renderOverview(report)}
-        </div>
-
-        <!-- Compliance Tab -->
-        <div class="tab-panel" id="tab-compliance">
-          ${renderComplianceTab(report)}
-        </div>
-
-        <!-- Risks Tab -->
-        <div class="tab-panel" id="tab-risks">
-          ${renderRisksTab(report)}
-        </div>
-
-        <!-- Ethics Tab -->
-        <div class="tab-panel" id="tab-ethics">
-          ${renderEthicsTab(report)}
-        </div>
-
-        <!-- Technical Tab -->
-        <div class="tab-panel" id="tab-technical">
-          ${renderTechnicalTab(report)}
+        <div class="results-content" style="padding: 1.5rem;">
+          <div id="tab-gov" class="tab-pane active">${renderOverview(report)}</div>
+          <div id="tab-policy" class="tab-pane">${renderPolicyTab(report)}</div>
+          <div id="tab-compliance" class="tab-pane">${renderComplianceTab(report)}</div>
+          <div id="tab-risk" class="tab-pane">${renderRisksTab(report)}</div>
+          <div id="tab-ethics" class="tab-pane">${renderEthicsTab(report)}</div>
+          <div id="tab-bias" class="tab-pane">${renderBiasTab(report)}</div>
+          <div id="tab-technical" class="tab-pane">${renderTechnicalTab(report)}</div>
+          <div id="tab-security" class="tab-pane">${renderSecurityTab(report)}</div>
+          <div id="tab-privacy" class="tab-pane">${renderPrivacyTab(report)}</div>
+          <div id="tab-guardrail" class="tab-pane">${renderGuardrailTab(report)}</div>
         </div>
 
       </div>
@@ -519,6 +568,7 @@ function renderOverview(report) {
     ${evidence ? `<div style="margin-bottom: 1.5rem;"><h3 style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">Evidence Citations</h3><div class="evidence-list">${evidence}</div></div>` : ''}
     ${reasoning}
     ${debateSection}
+    ${renderResearch(report.research)}
     <div style="margin-top: 1.5rem; display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">
       <span>Tokens used: ${(report.total_tokens_used || 0).toLocaleString()}</span>
       <span>•</span>
@@ -549,6 +599,7 @@ function renderComplianceTab(report) {
       <div style="font-size: 0.9rem; color: var(--text-secondary);">Score: <strong style="color: var(--text-primary);">${(output.overall_compliance_score * 100).toFixed(0)}%</strong></div>
     </div>
     <div class="compliance-list">${items}</div>
+    ${renderResearch(output.research)}
   `;
 }
 
@@ -575,6 +626,7 @@ function renderRisksTab(report) {
       <div style="font-size: 0.9rem; color: var(--text-secondary);">Score: <strong style="color: var(--text-primary);">${(output.risk_score * 100).toFixed(0)}%</strong></div>
     </div>
     <div class="risk-list">${items}</div>
+    ${renderResearch(output.research)}
   `;
 }
 
@@ -620,23 +672,27 @@ function renderEthicsTab(report) {
     </div>
     <div class="ethics-grid">${dims}</div>
     ${sovereignty}
+    ${renderResearch(output.research)}
   `;
+}
+
+function renderResearch(research) {
+  if (!research || !research.length) return '';
+  const items = research.map(r => `
+    <div style="margin-bottom: 0.75rem; padding: 0.75rem; background: rgba(255,255,255,0.02); border-left: 2px solid var(--accent-indigo);">
+      <div style="font-size: 0.75rem; color: var(--accent-indigo); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">🔍 Research Query</div>
+      <div style="font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem;">${escapeHtml(r.query)}</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Certainty: ${r.certainty_score.toFixed(2)} | Sources: ${r.sources ? r.sources.length : 0}</div>
+      <ul style="margin: 0; padding-left: 1rem; font-size: 0.8rem; color: var(--text-secondary);">
+        ${(r.findings || []).map(f => `<li>${escapeHtml(f)}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+  return `<div style="margin-top: 1rem;"><h4 style="font-size: 0.8rem; margin-bottom: 0.5rem;">Sub-Agent Research Findings</h4><div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.5rem;">${items}</div></div>`;
 }
 
 function renderTechnicalTab(report) {
   const output = report.technical_output;
-  if (!output?.findings?.length) return `<div class="empty-state"><div class="empty-icon">⚙️</div><p>No technical findings available.</p></div>`;
-
-  const findings = output.findings.map(f => `
-    <div class="tech-finding">
-      <div class="tech-finding-header">
-        <span class="risk-severity severity-${f.severity}">${f.severity}</span>
-        <span class="tech-finding-title">${escapeHtml(f.title)}</span>
-      </div>
-      <div class="tech-implication">${escapeHtml(f.implication)}</div>
-      ${f.recommendation ? `<div class="tech-recommendation">↗ ${escapeHtml(f.recommendation)}</div>` : ''}
-    </div>
-  `).join('');
 
   const debt = output.technical_debt?.length ? `
     <div style="margin-top: 1.5rem; padding: 1rem 1.25rem; background: rgba(34,211,238,0.04); border: 1px solid rgba(34,211,238,0.15); border-radius: var(--radius-md);">

@@ -241,12 +241,22 @@ class BiasFinding(BaseModel):
 
 # ── Agent Output Models ───────────────────────────────────────────────────────
 
+class ResearchReport(BaseModel):
+    query: str
+    findings: list[str]
+    certainty_score: float = Field(ge=0.0, le=1.0)
+    sources: list[str] = Field(default_factory=list)
+
+class AgentPlan(BaseModel):
+    needs_research: bool
+    search_queries: list[str] = Field(default_factory=list)
 
 class PolicyAgentOutput(BaseModel):
     requirements: list[PolicyRequirement]
     search_queries: list[str] = Field(default_factory=list)
     total_policies_searched: int = 0
     reasoning: str = ""
+    research: list[ResearchReport] = Field(default_factory=list)
 
 
 class ComplianceAgentOutput(BaseModel):
@@ -254,6 +264,7 @@ class ComplianceAgentOutput(BaseModel):
     overall_compliance_score: float = Field(ge=0.0, le=1.0, default=0.0)
     overall_status: ComplianceStatus = ComplianceStatus.UNKNOWN
     reasoning: str = ""
+    research: list[ResearchReport] = Field(default_factory=list)
 
 
 class RiskAgentOutput(BaseModel):
@@ -261,6 +272,7 @@ class RiskAgentOutput(BaseModel):
     overall_risk_level: RiskLevel = RiskLevel.MEDIUM
     risk_score: float = Field(ge=0.0, le=1.0, default=0.5)
     reasoning: str = ""
+    research: list[ResearchReport] = Field(default_factory=list)
 
 
 class EthicsAgentOutput(BaseModel):
@@ -268,6 +280,7 @@ class EthicsAgentOutput(BaseModel):
     overall_score: float = Field(ge=0.0, le=1.0, default=0.0)
     sovereignty_concerns: list[str] = Field(default_factory=list)
     reasoning: str = ""
+    research: list[ResearchReport] = Field(default_factory=list)
 
 
 class TechnicalAgentOutput(BaseModel):
@@ -275,27 +288,32 @@ class TechnicalAgentOutput(BaseModel):
     architecture_compliant: bool = False
     technical_debt: list[str] = Field(default_factory=list)
     reasoning: str = ""
+    research: list[ResearchReport] = Field(default_factory=list)
 
 class PrivacyAgentOutput(BaseModel):
     findings: list[PrivacyFinding]
     pii_handled: bool = False
     data_minimization_score: float = Field(ge=0.0, le=1.0, default=0.5)
     reasoning: str = ""
+    research: list[ResearchReport] = Field(default_factory=list)
 
 class SecurityAgentOutput(BaseModel):
     vulnerabilities: list[SecurityVulnerability]
     overall_security_posture: str = "unknown"
     reasoning: str = ""
+    research: list[ResearchReport] = Field(default_factory=list)
 
 class BiasAgentOutput(BaseModel):
     findings: list[BiasFinding]
     fairness_score: float = Field(ge=0.0, le=1.0, default=0.5)
     reasoning: str = ""
+    research: list[ResearchReport] = Field(default_factory=list)
 
 class GuardrailAgentOutput(BaseModel):
     triggered: bool = False
     violations: list[str] = Field(default_factory=list)
     reasoning: str = ""
+    research: list[ResearchReport] = Field(default_factory=list)
 
 
 # ── Agent Communication ───────────────────────────────────────────────────────
@@ -356,6 +374,10 @@ class GovernanceReport(BaseModel):
     risk_output: RiskAgentOutput | None = None
     ethics_output: EthicsAgentOutput | None = None
     technical_output: TechnicalAgentOutput | None = None
+    privacy_output: PrivacyAgentOutput | None = None
+    security_output: SecurityAgentOutput | None = None
+    bias_output: BiasAgentOutput | None = None
+    guardrail_output: GuardrailAgentOutput | None = None
 
     # Summary
     key_issues: list[str] = Field(default_factory=list)
@@ -391,6 +413,10 @@ class AgentContext(BaseModel):
     technical_output: TechnicalAgentOutput | None = None
     compliance_output: ComplianceAgentOutput | None = None
     ethics_output: EthicsAgentOutput | None = None
+    privacy_output: PrivacyAgentOutput | None = None
+    security_output: SecurityAgentOutput | None = None
+    bias_output: BiasAgentOutput | None = None
+    guardrail_output: GuardrailAgentOutput | None = None
     messages: list[AgentMessage] = Field(default_factory=list)
     token_usage: dict[str, int] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)

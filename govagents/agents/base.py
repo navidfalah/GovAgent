@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import time
+import asyncio
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Callable, Coroutine
 
 from govagents.core.llm import LLMClient, get_llm_client
 from govagents.core.logging import get_logger
-from govagents.core.models import AgentContext, AgentMessage, AgentRole, MessageType
+from govagents.core.models import AgentContext, AgentMessage, AgentRole, MessageType, AgentPlan, ResearchReport
+from govagents.agents.sub_agent import ResearchSubAgent
 
 log = get_logger(__name__)
 
@@ -37,7 +39,7 @@ class BaseAgent(ABC):
         ...
 
     @abstractmethod
-    async def run(self, context: AgentContext) -> Any:
+    async def run(self, context: AgentContext, emit_callback: Callable[[str, str, dict], Coroutine[Any, Any, None]] | None = None) -> Any:
         """Execute the agent's analysis and return its output model."""
         ...
 
@@ -89,10 +91,10 @@ class BaseAgent(ABC):
         )
         return msg
 
-    async def _timed_run(self, context: AgentContext) -> tuple[Any, float]:
+    async def _timed_run(self, context: AgentContext, emit_callback: Callable[[str, str, dict], Coroutine[Any, Any, None]] | None = None) -> tuple[Any, float]:
         """Run the agent and return (output, elapsed_seconds)."""
         start = time.perf_counter()
-        result = await self.run(context)
+        result = await self.run(context, emit_callback=emit_callback)
         elapsed = time.perf_counter() - start
         self.log.info(
             "agent_complete",
@@ -100,3 +102,49 @@ class BaseAgent(ABC):
             elapsed_s=round(elapsed, 2),
         )
         return result, elapsed
+
+    async def _plan_and_research(
+        self, 
+        context: AgentContext, 
+        user_prompt: str,
+        emit_callback: Callable[[str, str, dict], Coroutine[Any, Any, None]] | None = None
+    ) -> list[ResearchReport]:
+        """Ask LLM if it needs to search the web, and if so, spawn sub-agents."""
+        plan_prompt = f"""You are in a planning phase. Before evaluating the following task, do you need to search the live internet for additional context, news, or specific facts?
+Task to evaluate:
+{user_prompt}
+
+If you have enough context in the proposal, reply with needs_research = false.
+If you need more information (e.g. recent regulations, technical docs, company news), reply with needs_research = true and provide a list of search_queries.
+Keep queries specific. Return valid JSON matching the AgentPlan schema."""
+
+        plan_raw = await self.llm.structured_completion(
+            prompt=plan_prompt,
+            schema=AgentPlan,
+            system_prompt="You are a planning assistant deciding if internet research is needed."
+        )
+
+        research_reports = []
+        if plan_raw.needs_research and plan_raw.search_queries:
+            self.log.info("spawning_subagents", count=len(plan_raw.search_queries))
+            
+            # Concurrently spawn subagents
+            async def _run_subagent(query: str):
+                if emit_callback:
+                    await emit_callback("subagent_spawned", self.role.value, {"query": query})
+                
+                subagent = ResearchSubAgent(query)
+                report = await subagent.run()
+                
+                if emit_callback:
+                    await emit_callback("subagent_complete", self.role.value, {
+                        "query": query, 
+                        "findings": len(report.findings),
+                        "certainty": round(report.certainty_score, 2)
+                    })
+                return report
+
+            tasks = [_run_subagent(q) for q in plan_raw.search_queries[:3]] # limit to 3 queries max
+            research_reports = await asyncio.gather(*tasks)
+
+        return research_reports

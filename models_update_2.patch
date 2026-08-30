@@ -1,0 +1,79 @@
+--- govagents/core/models.py
++++ govagents/core/models.py
+@@ -242,59 +242,76 @@
+ # ── Agent Output Models ───────────────────────────────────────────────────────
+ 
++class ResearchReport(BaseModel):
++    query: str
++    findings: list[str]
++    certainty_score: float = Field(ge=0.0, le=1.0)
++    sources: list[str] = Field(default_factory=list)
++
++class AgentPlan(BaseModel):
++    needs_research: bool
++    search_queries: list[str] = Field(default_factory=list)
+ 
+ class PolicyAgentOutput(BaseModel):
+     requirements: list[PolicyRequirement]
+     search_queries: list[str] = Field(default_factory=list)
+     total_policies_searched: int = 0
+     reasoning: str = ""
++    research: list[ResearchReport] = Field(default_factory=list)
+ 
+ 
+ class ComplianceAgentOutput(BaseModel):
+     requirement_assessments: list[RequirementAssessment]
+     overall_compliance_score: float = Field(ge=0.0, le=1.0, default=0.0)
+     overall_status: ComplianceStatus = ComplianceStatus.UNKNOWN
+     reasoning: str = ""
++    research: list[ResearchReport] = Field(default_factory=list)
+ 
+ 
+ class RiskAgentOutput(BaseModel):
+     risks: list[RiskItem]
+     overall_risk_level: RiskLevel = RiskLevel.MEDIUM
+     risk_score: float = Field(ge=0.0, le=1.0, default=0.5)
+     reasoning: str = ""
++    research: list[ResearchReport] = Field(default_factory=list)
+ 
+ 
+ class EthicsAgentOutput(BaseModel):
+     dimensions: list[EthicsDimension]
+     overall_score: float = Field(ge=0.0, le=1.0, default=0.0)
+     sovereignty_concerns: list[str] = Field(default_factory=list)
+     reasoning: str = ""
++    research: list[ResearchReport] = Field(default_factory=list)
+ 
+ 
+ class TechnicalAgentOutput(BaseModel):
+     findings: list[TechnicalFinding]
+     architecture_compliant: bool = False
+     technical_debt: list[str] = Field(default_factory=list)
+     reasoning: str = ""
++    research: list[ResearchReport] = Field(default_factory=list)
+ 
+ class PrivacyAgentOutput(BaseModel):
+     findings: list[PrivacyFinding]
+     pii_handled: bool = False
+     data_minimization_score: float = Field(ge=0.0, le=1.0, default=0.5)
+     reasoning: str = ""
++    research: list[ResearchReport] = Field(default_factory=list)
+ 
+ class SecurityAgentOutput(BaseModel):
+     vulnerabilities: list[SecurityVulnerability]
+     overall_security_posture: str = "unknown"
+     reasoning: str = ""
++    research: list[ResearchReport] = Field(default_factory=list)
+ 
+ class BiasAgentOutput(BaseModel):
+     findings: list[BiasFinding]
+     fairness_score: float = Field(ge=0.0, le=1.0, default=0.5)
+     reasoning: str = ""
++    research: list[ResearchReport] = Field(default_factory=list)
+ 
+ class GuardrailAgentOutput(BaseModel):
+     triggered: bool = False
+     violations: list[str] = Field(default_factory=list)
+     reasoning: str = ""
++    research: list[ResearchReport] = Field(default_factory=list)
+ 

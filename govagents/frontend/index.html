@@ -245,6 +245,92 @@
                 </div>
               </div>
 
+              <!-- Security Config -->
+              <div class="config-card" id="cardSecurity">
+                <div class="config-header">
+                  <div class="config-title"><span style="font-size: 1.2rem;">🛡️</span> Security Agent</div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="cfgSecurityEnabled" checked onchange="toggleCard('cardSecurity', this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="config-body">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>Threat Model Strictness</label>
+                    <select id="cfgSecurityThreat" style="background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.1);">
+                      <option value="lenient">Lenient</option>
+                      <option value="standard" selected>Standard</option>
+                      <option value="strict">Zero-Trust</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Privacy Config -->
+              <div class="config-card" id="cardPrivacy">
+                <div class="config-header">
+                  <div class="config-title"><span style="font-size: 1.2rem;">👁️</span> Privacy Agent</div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="cfgPrivacyEnabled" checked onchange="toggleCard('cardPrivacy', this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="config-body">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>GDPR Enforcement</label>
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+                      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-primary);">
+                        <input type="radio" name="cfgPrivacyGdpr" value="false"> Relaxed
+                      </label>
+                      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-primary);">
+                        <input type="radio" name="cfgPrivacyGdpr" value="true" checked> Strict Mode
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bias Config -->
+              <div class="config-card" id="cardBias">
+                <div class="config-header">
+                  <div class="config-title"><span style="font-size: 1.2rem;">⚖️</span> Bias Agent</div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="cfgBiasEnabled" checked onchange="toggleCard('cardBias', this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="config-body">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>Fairness Metric</label>
+                    <select id="cfgBiasMetric" style="background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.1);">
+                      <option value="demographic_parity" selected>Demographic Parity</option>
+                      <option value="equal_opportunity">Equal Opportunity</option>
+                      <option value="counterfactual">Counterfactual Fairness</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Guardrail Config -->
+              <div class="config-card" id="cardGuardrail">
+                <div class="config-header">
+                  <div class="config-title"><span style="font-size: 1.2rem;">🛑</span> Guardrail Agent</div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="cfgGuardrailEnabled" checked onchange="toggleCard('cardGuardrail', this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="config-body">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>Violation Action</label>
+                    <select id="cfgGuardrailAction" style="background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); color: var(--accent-rose); font-weight: 600;">
+                      <option value="warn">Warn Only</option>
+                      <option value="absolute" selected>Immediate Reject</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
             <div class="form-actions" style="margin-top: 2rem;">
@@ -304,6 +390,12 @@
                   <div class="agent-name">Ethics</div>
                   <div class="agent-status idle">Waiting</div>
                 </div>
+                <div class="pipeline-arrow" style="height: 20px;">↓</div>
+                <div class="agent-node" id="agent-bias" data-agent="bias">
+                  <div class="agent-icon">⚖️</div>
+                  <div class="agent-name">Bias</div>
+                  <div class="agent-status idle">Waiting</div>
+                </div>
               </div>
 
               <!-- Path C -->
@@ -314,16 +406,38 @@
                   <div class="agent-name">Technical</div>
                   <div class="agent-status idle">Waiting</div>
                 </div>
+                <div class="pipeline-arrow" style="height: 20px;">↓</div>
+                <div class="agent-node" id="agent-security" data-agent="security">
+                  <div class="agent-icon">🛡️</div>
+                  <div class="agent-name">Security</div>
+                  <div class="agent-status idle">Waiting</div>
+                </div>
+              </div>
+
+              <!-- Path D -->
+              <div class="dag-path" id="dagPathD" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                <div class="path-label" style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Path D</div>
+                <div class="agent-node" id="agent-privacy" data-agent="privacy">
+                  <div class="agent-icon">👁️</div>
+                  <div class="agent-name">Privacy</div>
+                  <div class="agent-status idle">Waiting</div>
+                </div>
               </div>
             </div>
 
             <!-- Convergence -->
             <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; color: var(--text-muted); font-size: 1.2rem; font-weight: bold; animation: arrowPulse 2s ease-in-out infinite;">
-               ↘ &nbsp;&nbsp;&nbsp; ↓ &nbsp;&nbsp;&nbsp; ↙
+               ↘ &nbsp;&nbsp; ↓ &nbsp;&nbsp; ↓ &nbsp;&nbsp; ↙
             </div>
             <div class="pipeline-phase" style="margin-top: 1rem;">
-              <div class="phase-label">Convergence — Final Decision</div>
-              <div class="pipeline-row">
+              <div class="phase-label">Guardrail & Convergence</div>
+              <div class="pipeline-row" style="flex-direction: column; align-items: center;">
+                <div class="agent-node" id="agent-guardrail" data-agent="guardrail" style="border-color: rgba(248,113,113,0.5);">
+                  <div class="agent-icon">🛑</div>
+                  <div class="agent-name" style="color: var(--accent-rose);">Guardrail</div>
+                  <div class="agent-status idle">Waiting</div>
+                </div>
+                <div class="pipeline-arrow" style="height: 20px;">↓</div>
                 <div class="agent-node governance-node" id="agent-governance" data-agent="governance">
                   <div class="agent-icon">🏛️</div>
                   <div class="agent-name">Governance</div>

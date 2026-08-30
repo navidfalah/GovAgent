@@ -31,6 +31,22 @@
         "technical": {
           "enabled": true,
           "deep_scan": false
+        },
+        "privacy": {
+          "enabled": true,
+          "strict_gdpr": true
+        },
+        "security": {
+          "enabled": true,
+          "threat_model": "standard"
+        },
+        "bias": {
+          "enabled": true,
+          "fairness_metric": "demographic_parity"
+        },
+        "guardrail": {
+          "enabled": true,
+          "strictness": "absolute"
         }
       }
     },
@@ -54,12 +70,17 @@
           "accountability auditability AI system governance"
         ],
         "total_policies_searched": 20,
-        "reasoning": ""
+        "reasoning": "",
+        "research": []
       },
       "compliance_output": null,
       "risk_output": null,
       "ethics_output": null,
       "technical_output": null,
+      "privacy_output": null,
+      "security_output": null,
+      "bias_output": null,
+      "guardrail_output": null,
       "key_issues": [],
       "required_actions": [],
       "evidence_citations": [],
@@ -121,6 +142,22 @@
         "technical": {
           "enabled": true,
           "deep_scan": false
+        },
+        "privacy": {
+          "enabled": true,
+          "strict_gdpr": true
+        },
+        "security": {
+          "enabled": true,
+          "threat_model": "standard"
+        },
+        "bias": {
+          "enabled": true,
+          "fairness_metric": "demographic_parity"
+        },
+        "guardrail": {
+          "enabled": true,
+          "strictness": "absolute"
         }
       }
     },
@@ -146,27 +183,35 @@
           "Radiology departments in 12 EU hospitals processing 500+ scans daily AI governance obligations"
         ],
         "total_policies_searched": 19,
-        "reasoning": ""
+        "reasoning": "",
+        "research": []
       },
       "compliance_output": null,
       "risk_output": {
         "risks": [],
         "overall_risk_level": "MEDIUM",
         "risk_score": 0.5,
-        "reasoning": ""
+        "reasoning": "",
+        "research": []
       },
       "ethics_output": {
         "dimensions": [],
         "overall_score": 0.0,
         "sovereignty_concerns": [],
-        "reasoning": ""
+        "reasoning": "",
+        "research": []
       },
       "technical_output": {
         "findings": [],
         "architecture_compliant": false,
         "technical_debt": [],
-        "reasoning": ""
+        "reasoning": "",
+        "research": []
       },
+      "privacy_output": null,
+      "security_output": null,
+      "bias_output": null,
+      "guardrail_output": null,
       "key_issues": [],
       "required_actions": [],
       "evidence_citations": [],
@@ -237,5 +282,119 @@
     "error": null,
     "created_at": "2026-08-30T18:18:59.823232",
     "completed_at": "2026-08-30T18:19:57.835913Z"
+  },
+  "a6ee3059-f67c-4cd8-b981-8a829cf033dc": {
+    "id": "a6ee3059-f67c-4cd8-b981-8a829cf033dc",
+    "proposal": {
+      "id": "a6ee3059-f67c-4cd8-b981-8a829cf033dc",
+      "title": "Customer Service AI Chatbot",
+      "description": "A retail bank wants to deploy an AI chatbot to handle customer service inquiries. The chatbot can answer FAQs, help with account management, and provide basic financial guidance. It escalates complex issues to human agents. The chatbot retains conversation history for 12 months for quality improvement.",
+      "organization": "NextBank SA",
+      "sector": "finance",
+      "deployment_context": "Public-facing web and mobile app serving 1.5M retail banking customers in France",
+      "technical_details": "GPT-4 based chatbot with RAG over bank knowledge base. PII detection layer. Conversation logging to compliance-grade storage.",
+      "created_at": "2026-08-30T19:31:02.013551",
+      "metadata": {},
+      "pipeline_config": {
+        "policy": {
+          "enabled": true,
+          "max_requirements": 20
+        },
+        "compliance": {
+          "enabled": true,
+          "strictness": "normal"
+        },
+        "risk": {
+          "enabled": true,
+          "risk_tolerance": "medium"
+        },
+        "ethics": {
+          "enabled": true,
+          "focus_areas": []
+        },
+        "technical": {
+          "enabled": true,
+          "deep_scan": false
+        },
+        "privacy": {
+          "enabled": true,
+          "strict_gdpr": true
+        },
+        "security": {
+          "enabled": true,
+          "threat_model": "standard"
+        },
+        "bias": {
+          "enabled": true,
+          "fairness_metric": "demographic_parity"
+        },
+        "guardrail": {
+          "enabled": true,
+          "strictness": "warn"
+        }
+      }
+    },
+    "status": "pending",
+    "report": null,
+    "error": null,
+    "created_at": "2026-08-30T19:31:02.013562",
+    "completed_at": null
+  },
+  "971d088a-aeab-4e08-b51d-bb03c2369233": {
+    "id": "971d088a-aeab-4e08-b51d-bb03c2369233",
+    "proposal": {
+      "id": "971d088a-aeab-4e08-b51d-bb03c2369233",
+      "title": "AI Recruitment Screening System",
+      "description": "An HR tech startup wants to offer an AI service that automatically screens job applications by analyzing CVs, cover letters, and LinkedIn profiles to rank candidates and recommend which ones to advance to interview. The system is trained on historical successful hire data from client organizations.",
+      "organization": "TalentAI GmbH",
+      "sector": "enterprise",
+      "deployment_context": "SaaS platform offered to 50+ EU-based enterprise clients for high-volume recruitment",
+      "technical_details": "Multi-modal ML model combining NLP (CV parsing) and structured feature extraction. Trained on 100k historical hiring decisions. REST API integration with ATS systems.",
+      "created_at": "2026-08-30T19:38:31.011715",
+      "metadata": {},
+      "pipeline_config": {
+        "policy": {
+          "enabled": true,
+          "max_requirements": 20
+        },
+        "compliance": {
+          "enabled": true,
+          "strictness": "normal"
+        },
+        "risk": {
+          "enabled": true,
+          "risk_tolerance": "medium"
+        },
+        "ethics": {
+          "enabled": true,
+          "focus_areas": []
+        },
+        "technical": {
+          "enabled": true,
+          "deep_scan": false
+        },
+        "privacy": {
+          "enabled": true,
+          "strict_gdpr": true
+        },
+        "security": {
+          "enabled": true,
+          "threat_model": "standard"
+        },
+        "bias": {
+          "enabled": true,
+          "fairness_metric": "demographic_parity"
+        },
+        "guardrail": {
+          "enabled": true,
+          "strictness": "absolute"
+        }
+      }
+    },
+    "status": "pending",
+    "report": null,
+    "error": null,
+    "created_at": "2026-08-30T19:38:31.011738",
+    "completed_at": null
   }
 }

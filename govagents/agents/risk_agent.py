@@ -1,3 +1,4 @@
+from typing import Callable
 """Risk Agent — identifies and scores technical, organizational, and AI-specific risks."""
 
 from __future__ import annotations
@@ -58,7 +59,7 @@ Severity guidelines:
 
 You MUST respond with valid JSON following the exact schema specified."""
 
-    async def run(self, context: AgentContext) -> RiskAgentOutput:
+    async def run(self, context: AgentContext, emit_callback: Callable = None) -> RiskAgentOutput:
         proposal = context.proposal
         requirements = context.retrieved_requirements
 
@@ -107,6 +108,15 @@ Respond with this JSON structure:
 Identify 5-12 specific, relevant risks. Each risk must have a concrete mitigation strategy.
 Risk score (0.0-1.0) represents the aggregate risk exposure."""
 
+
+        # --- Sub-Agent Planning & Research ---
+        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
+        if research_results:
+            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
+            for r in research_results:
+                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
+            user_prompt += f"\n\n{research_text}"
+        # ------------------------------------
         self.log.info("risk_agent_analyzing")
 
         raw = await self.llm.complete_json(
@@ -153,6 +163,7 @@ Risk score (0.0-1.0) represents the aggregate risk exposure."""
         risk_score = float(raw.get("risk_score", 0.5))
 
         output = RiskAgentOutput(
+            research=research_results,
             risks=risks,
             overall_risk_level=overall_risk,
             risk_score=risk_score,
@@ -171,6 +182,15 @@ Risk score (0.0-1.0) represents the aggregate risk exposure."""
             },
         )
 
+
+        # --- Sub-Agent Planning & Research ---
+        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
+        if research_results:
+            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
+            for r in research_results:
+                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
+            user_prompt += f"\n\n{research_text}"
+        # ------------------------------------
         self.log.info(
             "risk_agent_complete",
             risk_level=overall_risk.value,

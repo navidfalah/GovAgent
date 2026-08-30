@@ -292,6 +292,54 @@
               </div>
             </div>
 
+            <!-- Per-Agent Profiles -->
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Per-Agent Profiles (Overrides)</h3>
+            <div style="background: rgba(255,255,255,0.02); padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);">
+              <div class="form-group">
+                <label for="cfgAgentSelect">Select Agent to Override</label>
+                <select id="cfgAgentSelect" onchange="loadAgentConfig()">
+                  <option value="policy">Policy Agent</option>
+                  <option value="risk">Risk Agent</option>
+                  <option value="technical">Technical Agent</option>
+                  <option value="compliance">Compliance Agent</option>
+                  <option value="ethics">Ethics Agent</option>
+                  <option value="governance">Governance Agent</option>
+                </select>
+              </div>
+              <div class="form-row" style="margin-top: 1rem;">
+                <div class="form-group">
+                  <label for="cfgAgentProvider">Provider (Leave blank for global)</label>
+                  <select id="cfgAgentProvider">
+                    <option value="">-- Use Global --</option>
+                    <option value="gemini">Google Gemini</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="groq">Groq</option>
+                    <option value="ollama">Ollama (Local)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="cfgAgentModel">Model Name</label>
+                  <input type="text" id="cfgAgentModel" placeholder="e.g. gpt-4o-mini" />
+                </div>
+              </div>
+              <div class="form-row" style="margin-top: 1rem;">
+                <div class="form-group">
+                  <label for="cfgAgentTemp">Temp: <span id="cfgAgentTempVal">--</span></label>
+                  <input type="range" id="cfgAgentTemp" min="0" max="1" step="0.05" oninput="document.getElementById('cfgAgentTempVal').innerText = this.value" />
+                </div>
+                <div class="form-group">
+                  <label for="cfgAgentTokens">Max Tokens</label>
+                  <input type="number" id="cfgAgentTokens" placeholder="-- Use Global --" />
+                </div>
+              </div>
+              <div class="form-group" style="margin-top: 1rem;">
+                <label for="cfgAgentPrompt">Custom System Prompt Override</label>
+                <textarea id="cfgAgentPrompt" rows="4" placeholder="If set, completely overrides the agent's default system prompt."></textarea>
+              </div>
+            </div>
+
             <!-- API Keys -->
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
             <h3 style="margin-bottom: 1rem; color: var(--text-primary);">API Keys</h3>

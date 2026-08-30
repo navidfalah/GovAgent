@@ -111,7 +111,8 @@ Risk score (0.0-1.0) represents the aggregate risk exposure."""
 
         raw = await self.llm.complete_json(
             self._build_messages(user_prompt),
-            temperature=0.1,
+            temperature=0.2,
+            agent_id=self.role.value,
         )
 
         risks = []

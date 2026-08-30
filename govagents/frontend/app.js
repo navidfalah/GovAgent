@@ -769,10 +769,14 @@ function updateFileLabel(input) {
 }
 
 // ── Configuration ─────────────────────────────────────────────────────────────
+let currentConfigData = null;
+
 async function loadConfig() {
   try {
     const res = await fetch('/api/config');
     const config = await res.json();
+    currentConfigData = config;
+    if (!currentConfigData.agent_configs) currentConfigData.agent_configs = {};
     
     document.getElementById('cfgProvider').value = config.llm_provider || 'gemini';
     document.getElementById('cfgModel').value = config.llm_model || 'gemini/gemini-2.0-flash';
@@ -785,13 +789,57 @@ async function loadConfig() {
     if (config.openai_api_key) document.getElementById('cfgOpenAIKey').placeholder = '•••••••••••••••• (Set)';
     if (config.anthropic_api_key) document.getElementById('cfgAnthropicKey').placeholder = '•••••••••••••••• (Set)';
     if (config.groq_api_key) document.getElementById('cfgGroqKey').placeholder = '•••••••••••••••• (Set)';
+    
+    loadAgentConfig(); // populate the sub-form
   } catch (err) {
     console.error("Failed to load config", err);
   }
 }
 
+function loadAgentConfig() {
+  if (!currentConfigData) return;
+  const agentId = document.getElementById('cfgAgentSelect').value;
+  const ac = currentConfigData.agent_configs[agentId] || {};
+  
+  document.getElementById('cfgAgentProvider').value = ac.llm_provider || '';
+  document.getElementById('cfgAgentModel').value = ac.llm_model || '';
+  
+  if (ac.llm_temperature !== undefined && ac.llm_temperature !== null) {
+    document.getElementById('cfgAgentTemp').value = ac.llm_temperature;
+    document.getElementById('cfgAgentTempVal').innerText = ac.llm_temperature;
+  } else {
+    document.getElementById('cfgAgentTemp').value = 0.1;
+    document.getElementById('cfgAgentTempVal').innerText = '--';
+  }
+  
+  document.getElementById('cfgAgentTokens').value = ac.llm_max_tokens || '';
+  document.getElementById('cfgAgentPrompt').value = ac.system_prompt || '';
+}
+
+function updateCurrentAgentConfig() {
+  if (!currentConfigData) return;
+  const agentId = document.getElementById('cfgAgentSelect').value;
+  
+  const provider = document.getElementById('cfgAgentProvider').value;
+  const model = document.getElementById('cfgAgentModel').value;
+  const tempStr = document.getElementById('cfgAgentTempVal').innerText;
+  const tokens = document.getElementById('cfgAgentTokens').value;
+  const prompt = document.getElementById('cfgAgentPrompt').value;
+  
+  const ac = {};
+  if (provider) ac.llm_provider = provider;
+  if (model) ac.llm_model = model;
+  if (tempStr !== '--') ac.llm_temperature = parseFloat(document.getElementById('cfgAgentTemp').value);
+  if (tokens) ac.llm_max_tokens = parseInt(tokens, 10);
+  if (prompt) ac.system_prompt = prompt;
+  
+  currentConfigData.agent_configs[agentId] = ac;
+}
+
 async function saveConfig(event) {
   event.preventDefault();
+  updateCurrentAgentConfig(); // commit the currently visible agent config to memory
+  
   const btn = document.getElementById('saveConfigBtn');
   btn.innerHTML = `<div class="spinner"></div> Saving...`;
   btn.disabled = true;
@@ -801,6 +849,7 @@ async function saveConfig(event) {
     llm_model: document.getElementById('cfgModel').value,
     llm_temperature: parseFloat(document.getElementById('cfgTemp').value),
     llm_max_tokens: parseInt(document.getElementById('cfgTokens').value, 10),
+    agent_configs: currentConfigData.agent_configs,
   };
   
   // Only update keys if user typed something

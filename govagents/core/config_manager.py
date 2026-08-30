@@ -24,7 +24,7 @@ class DynamicConfig(BaseModel):
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
     groq_api_key: str | None = None
-    agent_prompts: dict[str, str] = {}
+    agent_configs: dict[str, dict[str, Any]] = {}
 
 
 class DynamicSettingsManager:
@@ -61,7 +61,7 @@ class DynamicSettingsManager:
             openai_api_key=static.openai_api_key,
             anthropic_api_key=static.anthropic_api_key,
             groq_api_key=static.groq_api_key,
-            agent_prompts={},
+            agent_configs={},
         )
         return self._cache
 

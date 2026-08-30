@@ -176,6 +176,7 @@ You MUST assess all 7 dimensions: transparency, accountability, privacy, human_o
         raw = await self.llm.complete_json(
             self._build_messages(user_prompt),
             temperature=0.1,
+            agent_id=self.role.value,
         )
 
         dimensions = []

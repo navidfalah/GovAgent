@@ -60,12 +60,26 @@ class LLMClient:
         temperature: float | None = None,
         max_tokens: int | None = None,
         response_format: dict[str, str] | None = None,
+        agent_id: str | None = None,
     ) -> str:
         """Call the LLM and return the text response."""
         from govagents.core.config_manager import get_config_manager
         
         # Pull dynamic config
         dyn_config = get_config_manager().get_config()
+        
+        # Determine effective config for this request
+        eff_model = dyn_config.llm_model
+        eff_temp = dyn_config.llm_temperature
+        eff_tokens = dyn_config.llm_max_tokens
+        
+        if agent_id and agent_id in dyn_config.agent_configs:
+            ac = dyn_config.agent_configs[agent_id]
+            eff_model = ac.get("llm_model") or eff_model
+            if ac.get("llm_temperature") is not None:
+                eff_temp = ac["llm_temperature"]
+            if ac.get("llm_max_tokens") is not None:
+                eff_tokens = ac["llm_max_tokens"]
         
         # Override environment API keys based on dynamic config
         if dyn_config.gemini_api_key: os.environ["GEMINI_API_KEY"] = dyn_config.gemini_api_key
@@ -75,10 +89,10 @@ class LLMClient:
 
         s = self.settings
         kwargs: dict[str, Any] = {
-            "model": model or dyn_config.llm_model,
+            "model": model or eff_model,
             "messages": messages,
-            "temperature": temperature if temperature is not None else dyn_config.llm_temperature,
-            "max_tokens": max_tokens or dyn_config.llm_max_tokens,
+            "temperature": temperature if temperature is not None else eff_temp,
+            "max_tokens": max_tokens or eff_tokens,
             "timeout": s.llm_timeout,
         }
         if s.llm_base_url:
@@ -106,6 +120,7 @@ class LLMClient:
         model: str | None = None,
         temperature: float | None = None,
         require_cot: bool = True,
+        agent_id: str | None = None,
     ) -> dict[str, Any]:
         """Call the LLM and parse the response as JSON.
         
@@ -132,7 +147,7 @@ class LLMClient:
         else:
             enhanced.insert(0, {"role": "system", "content": instructions})
 
-        text = await self.complete(enhanced, model=model, temperature=temperature)
+        text = await self.complete(enhanced, model=model, temperature=temperature, agent_id=agent_id)
         return self._parse_json(text)
 
     def _parse_json(self, text: str) -> dict[str, Any]:

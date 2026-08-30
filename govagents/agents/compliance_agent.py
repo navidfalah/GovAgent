@@ -119,6 +119,7 @@ Be thorough. Assess every requirement listed."""
         raw = await self.llm.complete_json(
             self._build_messages(user_prompt),
             temperature=0.05,
+            agent_id=self.role.value,
         )
 
         # Parse assessments

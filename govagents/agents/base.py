@@ -45,7 +45,16 @@ class BaseAgent(ABC):
         self, user_prompt: str, extra_system: str = ""
     ) -> list[dict[str, str]]:
         """Build the messages list for an LLM call."""
+        from govagents.core.config_manager import get_config_manager
+        
         system = self.system_prompt
+        # Override with dynamic config if provided
+        dyn_config = get_config_manager().get_config()
+        if self.role.value in dyn_config.agent_configs:
+            custom_prompt = dyn_config.agent_configs[self.role.value].get("system_prompt")
+            if custom_prompt:
+                system = custom_prompt
+
         if extra_system:
             system = f"{system}\n\n{extra_system}"
         return [

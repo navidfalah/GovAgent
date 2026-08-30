@@ -114,6 +114,7 @@ Identify 4-10 specific technical findings. Focus on governance-relevant technica
         raw = await self.llm.complete_json(
             self._build_messages(user_prompt),
             temperature=0.1,
+            agent_id=self.role.value,
         )
 
         findings = []

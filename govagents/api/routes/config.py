@@ -17,7 +17,7 @@ class ConfigUpdate(BaseModel):
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
     groq_api_key: str | None = None
-    agent_prompts: dict[str, str] | None = None
+    agent_configs: dict[str, dict] | None = None
 
 
 @router.get("", response_model=DynamicConfig)

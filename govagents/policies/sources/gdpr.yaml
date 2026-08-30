@@ -1,0 +1,138 @@
+# GDPR — Key Articles for GovAgents Policy Corpus
+# Source: Regulation (EU) 2016/679 of the European Parliament and of the Council
+# Jurisdiction: European Union
+# Effective: May 25, 2018
+
+source:
+  id: gdpr
+  name: GDPR
+  version: "2016/679"
+  type: regulation
+  jurisdiction: European Union
+  effective_date: "2018-05-25"
+  url: "https://gdpr-info.eu/"
+  description: >
+    The General Data Protection Regulation is the EU's primary law regulating how
+    companies and other organizations protect EU citizens' personal data.
+
+requirements:
+  - id: gdpr-art5
+    article: Article 5
+    title: Principles relating to processing of personal data
+    requirement_type: privacy
+    text: >
+      Personal data shall be: (a) processed lawfully, fairly and in a transparent manner
+      in relation to the data subject ('lawfulness, fairness and transparency'); (b)
+      collected for specified, explicit and legitimate purposes and not further processed
+      in a manner that is incompatible with those purposes ('purpose limitation'); (c)
+      adequate, relevant and limited to what is necessary in relation to the purposes for
+      which they are processed ('data minimisation'); (d) accurate and, where necessary,
+      kept up to date ('accuracy'); (e) kept in a form which permits identification of
+      data subjects for no longer than is necessary ('storage limitation'); (f) processed
+      in a manner that ensures appropriate security of the personal data ('integrity and
+      confidentiality'). The controller shall be responsible for, and be able to
+      demonstrate compliance with, paragraph 1 ('accountability').
+    tags: [privacy, data-minimization, purpose-limitation, lawfulness, accountability]
+
+  - id: gdpr-art6
+    article: Article 6
+    title: Lawfulness of processing
+    requirement_type: privacy
+    text: >
+      Processing shall be lawful only if and to the extent that at least one of the
+      following applies: (a) the data subject has given consent to the processing of his
+      or her personal data for one or more specific purposes; (b) processing is necessary
+      for the performance of a contract to which the data subject is party; (c) processing
+      is necessary for compliance with a legal obligation to which the controller is subject;
+      (d) processing is necessary in order to protect the vital interests of the data subject
+      or of another natural person; (e) processing is necessary for the performance of a
+      task carried out in the public interest. In an employment context, processing of
+      personal data through AI monitoring systems requires a clear legal basis,
+      and employee consent is often not considered freely given due to power imbalance.
+    tags: [lawful-basis, consent, employment, privacy, legal-basis]
+
+  - id: gdpr-art13
+    article: Article 13
+    title: Information to be provided where personal data are collected from the data subject
+    requirement_type: transparency
+    text: >
+      Where personal data relating to a data subject are collected from the data subject,
+      the controller shall, at the time when personal data are obtained, provide the data
+      subject with all of the following information: (a) the identity and contact details
+      of the controller; (b) the contact details of the data protection officer; (c) the
+      purposes of the processing for which the personal data are intended as well as the
+      legal basis for the processing; (d) the recipients or categories of recipients of
+      the personal data, if any; (e) where applicable, the fact that the controller intends
+      to transfer personal data to a third country. Where the controller intends to further
+      process the personal data for a purpose other than that for which they were collected,
+      the controller shall provide the data subject with information on that other purpose
+      prior to that further processing.
+    tags: [transparency, information-obligation, privacy-notice, data-subjects]
+
+  - id: gdpr-art22
+    article: Article 22
+    title: Automated individual decision-making, including profiling
+    requirement_type: human_oversight
+    text: >
+      The data subject shall have the right not to be subject to a decision based solely
+      on automated processing, including profiling, which produces legal effects concerning
+      him or her or similarly significantly affects him or her. This right shall not apply
+      if the decision: (a) is necessary for entering into, or performance of, a contract
+      between the data subject and a data controller; (b) is authorised by Union or Member
+      State law; (c) is based on the data subject's explicit consent. In cases referred
+      to in points (a) and (c), the data controller shall implement suitable measures to
+      safeguard the data subject's rights and freedoms and legitimate interests, at least
+      the right to obtain human intervention on the part of the controller, to express his
+      or her point of view and to contest the decision.
+    tags: [automated-decisions, profiling, human-oversight, rights, explainability]
+
+  - id: gdpr-art25
+    article: Article 25
+    title: Data protection by design and by default
+    requirement_type: privacy
+    text: >
+      Taking into account the state of the art, the cost of implementation and the nature,
+      scope, context and purposes of processing as well as the risks of varying likelihood
+      and severity for rights and freedoms of natural persons posed by the processing, the
+      controller shall, both at the time of the determination of the means for processing
+      and at the time of the processing itself, implement appropriate technical and
+      organisational measures, such as pseudonymisation, which are designed to implement
+      data-protection principles in an effective manner and to integrate the necessary
+      safeguards into the processing in order to meet the requirements of this Regulation
+      and protect the rights of data subjects.
+    tags: [privacy-by-design, privacy-by-default, technical-measures, data-protection]
+
+  - id: gdpr-art35
+    article: Article 35
+    title: Data Protection Impact Assessment
+    requirement_type: risk_management
+    text: >
+      Where a type of processing in particular using new technologies, and taking into
+      account the nature, scope, context and purposes of the processing, is likely to
+      result in a high risk to the rights and freedoms of natural persons, the controller
+      shall, prior to the processing, carry out an assessment of the impact of the
+      envisaged processing operations on the protection of personal data. A single
+      assessment may address a set of similar processing operations that present similar
+      high risks. The controller shall seek the advice of the data protection officer,
+      where designated, when carrying out a data protection impact assessment. A DPIA
+      is required in particular in the case of: (a) systematic and extensive evaluation
+      of personal aspects relating to natural persons which is based on automated
+      processing, including profiling, and on which decisions are based that produce
+      legal effects concerning the natural person or similarly significantly affect
+      the natural person; (b) processing on a large scale of special categories of data.
+    tags: [DPIA, risk-assessment, automated-processing, profiling, mandatory]
+
+  - id: gdpr-art83
+    article: Article 83
+    title: General conditions for imposing administrative fines
+    requirement_type: accountability
+    text: >
+      Infringements of the following provisions shall be subject to administrative fines
+      up to 20,000,000 EUR, or in the case of an undertaking, up to 4% of the total
+      worldwide annual turnover of the preceding financial year, whichever is higher:
+      the basic principles for processing, including conditions for consent, pursuant to
+      Articles 5, 6, 7 and 9; the data subjects' rights pursuant to Articles 12 to 22;
+      the transfers of personal data to a recipient in a third country. Infringements
+      shall be subject to administrative fines up to 10,000,000 EUR, or in the case of an
+      undertaking, up to 2% of the total worldwide annual turnover, whichever is higher.
+    tags: [fines, penalties, enforcement, compliance]

@@ -1,0 +1,186 @@
+# EU AI Act — Key Articles for GovAgents Policy Corpus
+# Source: EUR-Lex, Regulation (EU) 2024/1689 of the European Parliament and of the Council
+# Jurisdiction: European Union
+# Effective: August 2024
+
+source:
+  id: eu-ai-act
+  name: EU AI Act
+  version: "2024/1689"
+  type: regulation
+  jurisdiction: European Union
+  effective_date: "2024-08-01"
+  url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32024R1689"
+  description: >
+    The EU Artificial Intelligence Act is the world's first comprehensive legal framework
+    on AI. It classifies AI systems by risk level and establishes obligations for providers
+    and deployers of AI systems.
+
+requirements:
+  - id: euaia-art6
+    article: Article 6
+    title: Classification rules for high-risk AI systems
+    requirement_type: risk_management
+    text: >
+      AI systems shall be classified as high-risk where they are intended to be used as a
+      safety component of a product, or where they are themselves a product, covered by the
+      Union harmonisation legislation listed in Annex I, and the product whose safety
+      component is the AI system, or the AI system itself as a product, is required to
+      undergo a third-party conformity assessment with a view to the placing on the market
+      or putting into service of that product. AI systems referred to in Annex III shall
+      also be classified as high-risk. High-risk AI systems shall include AI systems
+      intended to be used for employment and workers management, including AI systems
+      used for monitoring the performance of workers.
+    tags: [high-risk, classification, employment, worker-monitoring]
+
+  - id: euaia-art9
+    article: Article 9
+    title: Risk management system
+    requirement_type: risk_management
+    text: >
+      A risk management system shall be established, implemented, documented and
+      maintained in relation to high-risk AI systems. The risk management system shall
+      consist of a continuous iterative process run throughout the entire lifecycle of
+      a high-risk AI system. It shall comprise: (a) the identification and analysis of
+      known and reasonably foreseeable risks that the high-risk AI system can pose to
+      health, safety or fundamental rights when the AI system is used in accordance with
+      its intended purpose; (b) the estimation and evaluation of the risks that may
+      emerge when the high-risk AI system is used; (c) the evaluation of other risks
+      possibly arising based on the analysis of data gathered from the post-market
+      monitoring system; (d) the adoption of appropriate and targeted risk management
+      measures designed to address the risks identified.
+    tags: [risk-management, lifecycle, high-risk, monitoring]
+
+  - id: euaia-art10
+    article: Article 10
+    title: Data and data governance
+    requirement_type: data_governance
+    text: >
+      High-risk AI systems which make use of techniques involving the training of models
+      with data shall be developed on the basis of training, validation and testing data
+      sets that meet the quality criteria referred to in paragraphs 2 to 5. Training,
+      validation and testing data sets shall be subject to appropriate data governance
+      and management practices. Those practices shall concern in particular: the design
+      choices; data collection and data labelling processes; relevant data preparation
+      processing operations; formulation of relevant assumptions; assessment of the
+      availability, quantity and suitability of the data sets needed. Training, validation
+      and testing data sets shall take into account, to the extent required by the
+      intended purpose, the characteristics or elements that are particular to the
+      specific geographical, contextual, behavioural or functional setting within which
+      the high-risk AI system is intended to be used.
+    tags: [data-governance, training-data, data-quality, high-risk]
+
+  - id: euaia-art11
+    article: Article 11
+    title: Technical documentation
+    requirement_type: accountability
+    text: >
+      The technical documentation of a high-risk AI system shall be drawn up before that
+      system is placed on the market or put into service and shall be kept up to date.
+      The technical documentation shall be drawn up in such a way to demonstrate that
+      the high-risk AI system complies with the requirements set out in this Section
+      and shall provide national competent authorities and notified bodies with all
+      the necessary information to assess the compliance of the AI system with those
+      requirements. It shall contain, at a minimum, the elements set out in Annex IV.
+    tags: [documentation, technical-documentation, accountability, compliance]
+
+  - id: euaia-art13
+    article: Article 13
+    title: Transparency and provision of information to deployers
+    requirement_type: transparency
+    text: >
+      High-risk AI systems shall be designed and developed in such a way to ensure that
+      their operation is sufficiently transparent to enable deployers to interpret the
+      system's output and use it appropriately. An appropriate type and degree of
+      transparency shall be ensured, with a view to achieving compliance with the
+      relevant obligations of the provider and deployer set out in Section 3.
+      High-risk AI systems shall be accompanied by instructions for use in an appropriate
+      digital format or otherwise that include concise, complete, correct and clear
+      information that is relevant, accessible and comprehensible to deployers.
+      The instructions for use shall contain information on: (a) the identity and contact
+      details of the provider; (b) the capabilities and limitations of the high-risk AI
+      system including the level of accuracy, robustness and cybersecurity referred to
+      in Article 15; (c) any known or foreseeable circumstances that could lead to
+      risks to health, safety or fundamental rights; (d) the performance of the AI system
+      with regard to specific persons or groups of persons on which the system is
+      intended to be used; (e) where appropriate, specifications for the input data.
+    tags: [transparency, explainability, documentation, instructions-for-use]
+
+  - id: euaia-art14
+    article: Article 14
+    title: Human oversight
+    requirement_type: human_oversight
+    text: >
+      High-risk AI systems shall be designed and developed in such a way, including with
+      appropriate human-machine interface tools, that they can be effectively overseen by
+      natural persons during the period in which they are in use. With a view to
+      implementing human oversight measures, the following measures shall be ensured:
+      (a) high-risk AI systems shall be provided with the ability to be interrupted and
+      overridden at any time by a human; (b) the deployer shall designate a natural person
+      who is responsible for the AI system oversight; (c) natural persons to whom human
+      oversight is assigned shall be able to understand the capacities and limitations of
+      the high-risk AI system; (d) natural persons to whom human oversight is assigned
+      shall be able to disregard the output of the high-risk AI system and not act on it.
+      High-risk AI systems shall allow the human overseers to regularly check, calibrate
+      and retrain the system.
+    tags: [human-oversight, control, override, accountability, high-risk]
+
+  - id: euaia-art15
+    article: Article 15
+    title: Accuracy, robustness and cybersecurity
+    requirement_type: technical_robustness
+    text: >
+      High-risk AI systems shall be designed and developed in such a way that they achieve,
+      in the light of their intended purpose, an appropriate level of accuracy, robustness,
+      and cybersecurity, and perform consistently in those respects throughout their
+      lifecycle. The technical robustness of high-risk AI systems shall include resilience
+      in relation to errors, faults or inconsistencies that may occur within the system
+      or the environment in which the system operates. High-risk AI systems shall be
+      resilient against attempts by unauthorised third parties to alter their use, output
+      or performance by exploiting system vulnerabilities.
+    tags: [accuracy, robustness, cybersecurity, reliability, technical-robustness]
+
+  - id: euaia-art26
+    article: Article 26
+    title: Obligations of deployers of high-risk AI systems
+    requirement_type: accountability
+    text: >
+      Deployers of high-risk AI systems shall take appropriate technical and organisational
+      measures to ensure they use such systems in accordance with the instructions for use
+      accompanying the systems. They shall assign the task of human oversight to natural
+      persons who have the necessary competence, training and authority, as well as the
+      necessary support. Deployers shall monitor the operation of the high-risk AI system
+      on the basis of the instructions for use and, where relevant, inform providers about
+      serious incidents. Deployers shall keep the logs automatically generated by the
+      high-risk AI system to the extent such logs are under their control. Where a deployer
+      discovers a risk to health, safety or fundamental rights, it shall immediately inform
+      the relevant market surveillance authority.
+    tags: [deployer-obligations, monitoring, incident-reporting, logs, accountability]
+
+  - id: euaia-art50
+    article: Article 50
+    title: Transparency obligations for certain AI systems
+    requirement_type: transparency
+    text: >
+      Providers of AI systems intended to interact directly with natural persons shall
+      ensure that those natural persons are informed that they are interacting with an
+      AI system, unless this is obvious from the circumstances and the context of use.
+      Providers of AI systems, including general-purpose AI systems, that generate
+      synthetic audio, image, video or text content, shall ensure that the outputs of the
+      AI system are marked in a machine-readable format and detectable as artificially
+      generated or manipulated.
+    tags: [transparency, disclosure, ai-interaction, synthetic-content]
+
+  - id: euaia-art99
+    article: Article 99
+    title: Penalties
+    requirement_type: accountability
+    text: >
+      Non-compliance with the prohibition of the AI practices referred to in Article 5
+      shall be subject to administrative fines of up to EUR 35,000,000 or, if the offender
+      is an undertaking, up to 7% of its total worldwide annual turnover for the preceding
+      financial year, whichever is higher. Non-compliance of the AI system with any
+      requirements or obligations under this Regulation shall be subject to administrative
+      fines of up to EUR 15,000,000 or, if the offender is an undertaking, up to 3% of
+      its total worldwide annual turnover, whichever is higher.
+    tags: [penalties, enforcement, fines, compliance]

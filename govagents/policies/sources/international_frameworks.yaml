@@ -1,0 +1,288 @@
+# OECD AI Principles — for GovAgents Policy Corpus
+# Source: OECD Recommendation of the Council on Artificial Intelligence, OECD/LEGAL/0449
+# Jurisdiction: International
+# Adopted: May 2019, Updated: 2024
+
+source:
+  id: oecd-ai-principles
+  name: OECD AI Principles
+  version: "2024"
+  type: framework
+  jurisdiction: international
+  effective_date: "2019-05-22"
+  url: "https://oecd.ai/en/ai-principles"
+  description: >
+    The OECD AI Principles promote AI that is innovative, trustworthy and that respects
+    human rights and democratic values. They have been adopted by 46 countries and serve
+    as a reference for many national AI governance frameworks.
+
+requirements:
+  - id: oecd-p1-1
+    article: Principle 1.1
+    title: Inclusive growth, sustainable development and well-being
+    requirement_type: fairness
+    text: >
+      Stakeholders should proactively engage in responsible stewardship of trustworthy AI
+      in pursuit of beneficial outcomes for people and the planet, such as augmenting
+      human capabilities and enhancing creativity, while advancing inclusion of underrepresented
+      populations, reducing economic, social, gender and other inequalities, and protecting
+      natural environments, thus invigorating inclusive growth, sustainable development
+      and well-being.
+    tags: [fairness, inclusion, well-being, societal-impact, equity]
+
+  - id: oecd-p1-2
+    article: Principle 1.2
+    title: Human-centred values and fairness
+    requirement_type: fairness
+    text: >
+      AI actors should respect the rule of law, human rights and democratic values,
+      throughout the AI lifecycle. These include freedom, dignity and autonomy, privacy
+      and data protection, non-discrimination and equality, diversity, fairness, social
+      justice, and internationally recognised labour rights. To this end, AI actors should
+      implement mechanisms and safeguards, such as capacity for human determination,
+      that are appropriate to the context and consistent with the state of art.
+    tags: [human-rights, fairness, non-discrimination, autonomy, labour-rights]
+
+  - id: oecd-p1-3
+    article: Principle 1.3
+    title: Transparency and explainability
+    requirement_type: transparency
+    text: >
+      AI Actors should commit to transparency and responsible disclosure regarding AI systems.
+      To this end, they should provide meaningful information, appropriate to the context,
+      and consistent with the state of art: (i) to foster a general understanding of AI systems;
+      (ii) to make stakeholders aware of their interactions with AI systems, including in the
+      workplace; (iii) to enable those affected by an AI system to understand the outcome,
+      and (iv) to enable those adversely affected by an AI system to challenge its outcome
+      based on plain and easy-to-understand information about the factors, and the logic
+      that served as the basis for the prediction, recommendation or decision.
+    tags: [transparency, explainability, disclosure, right-to-explanation, workplace]
+
+  - id: oecd-p1-4
+    article: Principle 1.4
+    title: Robustness, security and safety
+    requirement_type: technical_robustness
+    text: >
+      AI systems should be robust, secure and safe throughout their entire lifecycle so
+      that, in conditions of normal use, foreseeable use or misuse, or other adverse
+      conditions, they function appropriately and do not pose unreasonable safety risk.
+      To this end, AI actors should ensure traceability, including in relation to datasets,
+      processes and decisions made during the AI system lifecycle, to enable analysis of
+      the AI system's outcomes and responses to inquiry, appropriate to the context and
+      consistent with the state of art. AI actors should, based on their roles, the context,
+      and their ability to act, apply a systematic risk management approach to each phase
+      of the AI system lifecycle on an ongoing basis to address risks related to AI systems,
+      including privacy, digital security, safety and bias.
+    tags: [robustness, security, safety, traceability, risk-management, lifecycle]
+
+  - id: oecd-p1-5
+    article: Principle 1.5
+    title: Accountability
+    requirement_type: accountability
+    text: >
+      AI actors should be accountable for the proper functioning of AI systems and for
+      the respect of the above principles, based on their roles and the context, and
+      consistent with the state of art. To this end, AI actors should ensure mechanisms
+      are in place to ensure such responsibility and accountability. Where AI systems
+      are deployed in contexts involving individuals' legally protected rights or where
+      significant levels of risk are present, mechanisms for the exercise of human
+      oversight should be developed and implemented where feasible.
+    tags: [accountability, responsibility, governance, human-oversight]
+
+
+# NIST AI Risk Management Framework — Key Concepts
+# Source: NIST AI 100-1, January 2023
+# Jurisdiction: United States (international reference)
+
+---
+source:
+  id: nist-ai-rmf
+  name: NIST AI Risk Management Framework
+  version: "1.0"
+  type: framework
+  jurisdiction: United States
+  effective_date: "2023-01-26"
+  url: "https://airc.nist.gov/RMF"
+  description: >
+    The NIST AI RMF provides a framework for better managing risks to individuals,
+    organizations, and society associated with AI. It is organized around four functions:
+    GOVERN, MAP, MEASURE, and MANAGE.
+
+requirements:
+  - id: nist-govern-1
+    article: GOVERN 1
+    title: Policies, processes, procedures and practices for AI risk management
+    requirement_type: risk_management
+    text: >
+      Policies, processes, procedures, and practices across the organization related to
+      the mapping, measuring, and managing of AI risks are in place, transparent, and
+      implemented effectively. Leadership and organizational structures enable accountability
+      for AI risk management. Organizational teams that develop, deploy, and operate AI
+      systems have organizational-wide TEVV (Test, Evaluation, Verification, Validation)
+      capacity. Documentation of AI systems throughout their lifecycle is available and
+      maintained.
+    tags: [governance, policy, risk-management, accountability, documentation]
+
+  - id: nist-govern-4
+    article: GOVERN 4
+    title: Organizational teams are committed to a culture that considers AI risk
+    requirement_type: accountability
+    text: >
+      Organizational teams that develop, deploy, evaluate and use AI systems are committed
+      to a culture that considers and communicates AI risk. Teams apply frameworks,
+      playbooks, and checklists that operationalize AI risk and trustworthiness requirements.
+      Teams consider and address the potential for bias and fairness issues throughout the
+      AI lifecycle. Organizational policies establish regular review processes for AI risk
+      documentation.
+    tags: [culture, risk-awareness, bias, fairness, team-accountability]
+
+  - id: nist-map-1
+    article: MAP 1
+    title: Context is established and understood
+    requirement_type: risk_management
+    text: >
+      Context is established and understood. The specific use case and context of use
+      for AI risk management are understood. The specific tasks and goals of the AI system
+      are defined and documented. The positive and negative impacts of AI systems are
+      identified and documented. The AI system's affected persons and communities are
+      identified and their concerns and needs are understood. Specific population groups
+      such as children and those with disabilities are considered.
+    tags: [context, use-case, affected-parties, impact-assessment]
+
+  - id: nist-measure-2
+    article: MEASURE 2
+    title: AI system risks and impacts are evaluated
+    requirement_type: risk_management
+    text: >
+      AI system risks and impacts are evaluated. The evaluation is performed based on
+      scientific rigor, technical and social expertise. Practices and personnel for
+      AI risk evaluation and measurement are appropriate to the context. AI system
+      performance is evaluated for accuracy, precision, recall, and fairness across
+      relevant demographic groups. Evaluation includes consideration of the risk of
+      harm from system errors. Bias testing is conducted and results are documented.
+    tags: [risk-evaluation, measurement, fairness, bias-testing, accuracy]
+
+  - id: nist-manage-1
+    article: MANAGE 1
+    title: Risks based on assessments are prioritized and addressed
+    requirement_type: risk_management
+    text: >
+      Risks based on assessments, together with residual risks after risk treatment,
+      are prioritized and addressed. Risk response options are selected and implemented.
+      Responses to the AI risks deemed high priority are developed and managed according
+      to a documented plan. If the AI system is deployed, residual risks, including any
+      new risks that arise from the deployment, are monitored, assessed, and managed.
+      Identified AI risks are prioritized using criteria consistent with the organization's
+      risk appetite and tolerance.
+    tags: [risk-mitigation, residual-risk, monitoring, risk-prioritization]
+
+
+# EU High-Level Expert Group on AI — 7 Key Requirements
+# Source: Ethics Guidelines for Trustworthy AI, April 2019
+# Jurisdiction: European Union
+
+---
+source:
+  id: eu-hleg-ai
+  name: EU HLEG AI Guidelines
+  version: "2019"
+  type: guideline
+  jurisdiction: European Union
+  effective_date: "2019-04-08"
+  url: "https://digital-strategy.ec.europa.eu/en/library/ethics-guidelines-trustworthy-ai"
+  description: >
+    The EU High-Level Expert Group on AI published Ethics Guidelines for Trustworthy AI,
+    identifying seven key requirements that AI systems must meet to be considered trustworthy.
+
+requirements:
+  - id: hleg-r1
+    article: Requirement 1
+    title: Human agency and oversight
+    requirement_type: human_oversight
+    text: >
+      AI systems should support human autonomy and decision-making, as prescribed by the
+      principle of respect for human autonomy. This requires that AI systems are designed
+      and developed so as to allow humans to make informed decisions and to foster their
+      fundamental rights. At the same time, proper mechanisms need to be ensured to allow
+      for human oversight, including the possibility to decide when and how to use AI systems
+      and, ultimately, to override decisions made by them. AI systems should not undermine
+      human oversight by obscuring the nature of how they function.
+    tags: [human-oversight, autonomy, override, transparency, human-agency]
+
+  - id: hleg-r2
+    article: Requirement 2
+    title: Technical robustness and safety
+    requirement_type: technical_robustness
+    text: >
+      Trustworthy AI requires algorithms to be secure, reliable and robust enough to deal
+      with errors or inconsistencies during all life cycle phases of the AI system, and
+      to adequately cope with erroneous outcomes. In addition, it must be ensured that
+      the AI system reliably behaves as intended while minimising unintended and unexpected
+      harm, and preventing unacceptable harm, as well as avoiding harm to users, third
+      parties and society at large. AI systems need to be tested to verify that they behave
+      as expected and that they do not pose unnecessary risks.
+    tags: [robustness, safety, reliability, testing, harm-prevention]
+
+  - id: hleg-r3
+    article: Requirement 3
+    title: Privacy and data governance
+    requirement_type: privacy
+    text: >
+      The fundamental right to privacy and data protection must be guaranteed at every
+      stage of the life cycle of the AI system. AI systems must guarantee privacy and
+      data protection and allow individuals to control their own data. In addition, adequate
+      data governance mechanisms must be put in place, taking into account the quality and
+      integrity of the data, and ensuring legitimised access to data. Privacy-enabling
+      architectures should be developed and the data required should be minimised.
+    tags: [privacy, data-governance, data-protection, data-minimization, control]
+
+  - id: hleg-r4
+    article: Requirement 4
+    title: Transparency
+    requirement_type: transparency
+    text: >
+      The data, system and AI business model should be transparent. Traceability mechanisms
+      can help achieving this. In addition, AI systems and their decisions should be
+      explained in a manner adapted to the stakeholder concerned. Humans need to be
+      aware that they are interacting with an AI system, and must be informed of the
+      system's capabilities and limitations. AI systems should provide explanations of
+      their decisions that are understandable and accessible.
+    tags: [transparency, explainability, traceability, disclosure, stakeholders]
+
+  - id: hleg-r5
+    article: Requirement 5
+    title: Diversity, non-discrimination and fairness
+    requirement_type: fairness
+    text: >
+      Unfair bias must be avoided, as it could have multiple negative implications, from
+      the marginalization of vulnerable groups, to the exacerbation of prejudice and
+      discrimination. Fostering diversity, AI systems should be accessible to all, regardless
+      of any disability, and involve relevant stakeholders throughout their entire life cycle.
+      This also entails ensuring equal access and equal treatment of data sets, and avoiding
+      discrimination against any group of people.
+    tags: [fairness, non-discrimination, bias, diversity, accessibility, equity]
+
+  - id: hleg-r6
+    article: Requirement 6
+    title: Societal and environmental well-being
+    requirement_type: fairness
+    text: >
+      In line with the principles of fairness and prevention of harm, the broader society,
+      other sentient beings and the environment should be also considered as stakeholders
+      throughout the AI system's life cycle. Sustainability and ecological responsibility
+      of AI systems should be encouraged, and research should be fostered into AI solutions
+      addressing areas of global concern, such as the Sustainable Development Goals.
+    tags: [societal-impact, environmental, sustainability, broader-stakeholders]
+
+  - id: hleg-r7
+    article: Requirement 7
+    title: Accountability
+    requirement_type: accountability
+    text: >
+      Mechanisms should be put in place to ensure responsibility and accountability for AI
+      systems and their outcomes, both before and after their development, deployment and
+      use. The ability to retrace decisions made by AI systems to understand why they were
+      made is essential. Auditability of AI systems is key in this respect, as it enables
+      the assessment of algorithms, data and design processes. AI system should be auditable
+      even without disclosure of source code.
+    tags: [accountability, auditability, responsibility, traceability, decisions]

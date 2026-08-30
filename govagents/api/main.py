@@ -77,8 +77,10 @@ def create_app() -> FastAPI:
     )
 
     # Routes
+    from govagents.api.routes import config
     app.include_router(assess.router)
     app.include_router(policies.router)
+    app.include_router(config.router)
 
     # Health check
     @app.get("/api/health", response_model=HealthResponse, tags=["system"])

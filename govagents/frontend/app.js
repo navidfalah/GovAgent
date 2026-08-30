@@ -58,6 +58,7 @@ function showSection(name) {
 
   if (name === 'policies') loadPolicies();
   if (name === 'history') loadHistory();
+  if (name === 'settings') loadConfig();
 }
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -102,9 +103,20 @@ async function submitAssessment(event) {
   btn.disabled = true;
   btn.innerHTML = `<div class="spinner"></div> Running Assessment...`;
 
+  // Read file if uploaded
+  let fileText = '';
+  const fileInput = document.getElementById('propFile');
+  if (fileInput.files.length > 0) {
+    try {
+      fileText = await fileInput.files[0].text();
+    } catch (e) {
+      console.warn("Failed to read file", e);
+    }
+  }
+
   const payload = {
     title: document.getElementById('propTitle').value.trim(),
-    description: document.getElementById('propDesc').value.trim(),
+    description: document.getElementById('propDesc').value.trim() + (fileText ? `\n\n[UPLOADED CONTEXT]\n${fileText.substring(0, 10000)}` : ''),
     organization: document.getElementById('propOrg').value.trim() || null,
     sector: document.getElementById('propSector').value || null,
     deployment_context: document.getElementById('propContext').value.trim() || null,
@@ -701,6 +713,8 @@ function restoreForm() {
   document.getElementById('resultsSection').classList.add('hidden');
   document.getElementById('resultsSection').innerHTML = '';
   document.getElementById('activityEntries').innerHTML = '';
+  document.getElementById('propFile').value = '';
+  document.getElementById('fileUploadLabel').innerText = '';
 
   // Reset agent states
   document.querySelectorAll('.agent-node').forEach(n => {
@@ -742,4 +756,89 @@ function formatDate(isoStr) {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
+}
+
+// ── File Upload ───────────────────────────────────────────────────────────────
+function updateFileLabel(input) {
+  const el = document.getElementById('fileUploadLabel');
+  if (input.files.length > 0) {
+    el.innerText = input.files[0].name;
+  } else {
+    el.innerText = '';
+  }
+}
+
+// ── Configuration ─────────────────────────────────────────────────────────────
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const config = await res.json();
+    
+    document.getElementById('cfgProvider').value = config.llm_provider || 'gemini';
+    document.getElementById('cfgModel').value = config.llm_model || 'gemini/gemini-2.0-flash';
+    document.getElementById('cfgTemp').value = config.llm_temperature || 0.1;
+    document.getElementById('cfgTempVal').innerText = config.llm_temperature || 0.1;
+    document.getElementById('cfgTokens').value = config.llm_max_tokens || 4096;
+    
+    // Mask API keys if they exist
+    if (config.gemini_api_key) document.getElementById('cfgGeminiKey').placeholder = '•••••••••••••••• (Set)';
+    if (config.openai_api_key) document.getElementById('cfgOpenAIKey').placeholder = '•••••••••••••••• (Set)';
+    if (config.anthropic_api_key) document.getElementById('cfgAnthropicKey').placeholder = '•••••••••••••••• (Set)';
+    if (config.groq_api_key) document.getElementById('cfgGroqKey').placeholder = '•••••••••••••••• (Set)';
+  } catch (err) {
+    console.error("Failed to load config", err);
+  }
+}
+
+async function saveConfig(event) {
+  event.preventDefault();
+  const btn = document.getElementById('saveConfigBtn');
+  btn.innerHTML = `<div class="spinner"></div> Saving...`;
+  btn.disabled = true;
+  
+  const payload = {
+    llm_provider: document.getElementById('cfgProvider').value,
+    llm_model: document.getElementById('cfgModel').value,
+    llm_temperature: parseFloat(document.getElementById('cfgTemp').value),
+    llm_max_tokens: parseInt(document.getElementById('cfgTokens').value, 10),
+  };
+  
+  // Only update keys if user typed something
+  const gk = document.getElementById('cfgGeminiKey').value;
+  const ok = document.getElementById('cfgOpenAIKey').value;
+  const ak = document.getElementById('cfgAnthropicKey').value;
+  const gqk = document.getElementById('cfgGroqKey').value;
+  
+  if (gk) payload.gemini_api_key = gk;
+  if (ok) payload.openai_api_key = ok;
+  if (ak) payload.anthropic_api_key = ak;
+  if (gqk) payload.groq_api_key = gqk;
+
+  try {
+    const res = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error("Failed to save");
+    
+    // Clear passwords
+    document.getElementById('cfgGeminiKey').value = '';
+    document.getElementById('cfgOpenAIKey').value = '';
+    document.getElementById('cfgAnthropicKey').value = '';
+    document.getElementById('cfgGroqKey').value = '';
+    
+    btn.innerHTML = `Saved ✓`;
+    btn.style.background = 'var(--accent-emerald)';
+    setTimeout(() => {
+      btn.innerHTML = `Save Configuration`;
+      btn.style.background = '';
+      btn.disabled = false;
+      loadConfig();
+    }, 2000);
+  } catch (err) {
+    alert("Failed to save config: " + err.message);
+    btn.innerHTML = `Save Configuration`;
+    btn.disabled = false;
+  }
 }

@@ -62,12 +62,23 @@ class LLMClient:
         response_format: dict[str, str] | None = None,
     ) -> str:
         """Call the LLM and return the text response."""
+        from govagents.core.config_manager import get_config_manager
+        
+        # Pull dynamic config
+        dyn_config = get_config_manager().get_config()
+        
+        # Override environment API keys based on dynamic config
+        if dyn_config.gemini_api_key: os.environ["GEMINI_API_KEY"] = dyn_config.gemini_api_key
+        if dyn_config.openai_api_key: os.environ["OPENAI_API_KEY"] = dyn_config.openai_api_key
+        if dyn_config.anthropic_api_key: os.environ["ANTHROPIC_API_KEY"] = dyn_config.anthropic_api_key
+        if dyn_config.groq_api_key: os.environ["GROQ_API_KEY"] = dyn_config.groq_api_key
+
         s = self.settings
         kwargs: dict[str, Any] = {
-            "model": model or s.get_litellm_model(),
+            "model": model or dyn_config.llm_model,
             "messages": messages,
-            "temperature": temperature if temperature is not None else s.llm_temperature,
-            "max_tokens": max_tokens or s.llm_max_tokens,
+            "temperature": temperature if temperature is not None else dyn_config.llm_temperature,
+            "max_tokens": max_tokens or dyn_config.llm_max_tokens,
             "timeout": s.llm_timeout,
         }
         if s.llm_base_url:

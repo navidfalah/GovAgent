@@ -1,182 +1,136 @@
-# GovAgents — Multi-Agent AI Governance & Policy Reasoning System
+# GovAgents: Multi-Agent AI Governance System
 
-> A multi-agent AI system for analyzing AI governance requirements, evaluating compliance and risk, and producing evidence-backed governance decisions.
+<div align="center">
+  <p><strong>A modular, event-driven multi-agent system for reasoning about AI policy, risk, ethics, and compliance.</strong></p>
+</div>
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-green.svg)](https://fastapi.tiangolo.com)
-[![LiteLLM](https://img.shields.io/badge/LiteLLM-universal-purple.svg)](https://litellm.ai)
+## Overview
 
-## Architecture
+**GovAgents** evaluates AI system proposals and technical architectures against a complex corpus of global policies (EU AI Act, GDPR, NIST RMF, OECD Principles) to produce evidence-backed governance decisions. 
 
-GovAgents uses **6 specialized agents** orchestrated through an async pipeline:
+Rather than relying on a single large language model (LLM) to perform all reasoning, GovAgents uses a **specialized multi-agent architecture** where agents focus on distinct aspects of governance (e.g., Risk, Ethics, Technical Architecture, Policy Compliance).
 
+## Key Features
+
+- 🤖 **6 Specialized Agents**: Dedicated agents for Policy Retrieval, Risk Assessment, Technical Review, Compliance, Ethics, and Governance Synthesis.
+- 🧩 **Advanced Plugin Architecture**: Agents and Capabilities (tools) are dynamically loaded via a `@registry` system, making the system highly extensible.
+- 📡 **Event-Driven Pub/Sub**: Inter-agent communication is handled by an asynchronous Message Bus supporting real-time Server-Sent Events (SSE).
+- ⚖️ **Automated Agent Debate**: Disagreements between agents (e.g., the Technical Agent disagrees with the Risk Agent on a threat severity) are detected and resolved via an LLM debate protocol.
+- 📚 **RAG Policy Corpus**: Built-in ingestion and semantic search (ChromaDB) over a complex YAML-based policy corpus.
+- 🎨 **Premium Glassmorphism UI**: A stunning dark-mode Single Page Application (SPA) to visualize the real-time agent pipeline and governance reports.
+
+---
+
+## 🏗️ Architecture
+
+GovAgents uses a dynamic, decoupled architecture heavily relying on Dependency Injection (DI) and a Plugin Registry.
+
+```text
+govagents/
+├── core/           # DI Container, Plugin Registry, Shared Pydantic Models, LLM Client
+├── capabilities/   # Reusable tools (VectorSearch, NLIChecker) injected into agents
+├── agents/         # Auto-discovered Agents (Policy, Risk, Technical, Compliance, etc.)
+├── orchestration/  # Async Coordinator, Debate Protocol, Event-Driven Message Bus
+├── policies/       # YAML Corpus parser, ChromaDB ingestion, Semantic Retrieval
+├── api/            # FastAPI routes & SSE streaming
+└── frontend/       # Vanilla JS/CSS Glassmorphism Web App
 ```
-                 Proposal
-                    │
-             Orchestrator
-                    │
-    ┌───────────────┼───────────────┐
-    │               │               │
-  Policy          Risk           Technical
-  Agent           Agent            Agent
-    │               │               │
-    └───────────────┼───────────────┘
-                    │
-         ┌──────────┴──────────┐
-         │                     │
-     Compliance             Ethics &
-       Agent               Sovereignty
-         │                     │
-         └──────────┬──────────┘
-                    │
-           [Debate Protocol]
-           (if disagreements)
-                    │
-            Governance Agent
-                    │
-            Final Report
-```
 
-Each agent has a distinct responsibility:
+### The Agent Pipeline
+1. **Parallel Analysis**: The **Policy Agent** retrieves laws, the **Risk Agent** calculates threat vectors, and the **Technical Agent** reviews the architecture.
+2. **Sequential Assessment**: The **Compliance Agent** and **Ethics Agent** evaluate the findings from Phase 1.
+3. **Debate**: If the Orchestrator detects conflicting agent reasoning, it triggers the `DebateProtocol` to resolve it.
+4. **Synthesis**: The **Governance Agent** reviews all outputs and makes a final `APPROVED`, `CONDITIONAL_APPROVAL`, `REJECTED`, or `ABSTAINED` decision.
 
-| Agent | Responsibility |
-|---|---|
-| **Policy Agent** | Searches policy corpus, identifies applicable requirements |
-| **Risk Agent** | Identifies and scores technical, legal, ethical risks |
-| **Technical Agent** | Analyzes architecture for governance compliance gaps |
-| **Compliance Agent** | Checks whether the proposal satisfies each requirement |
-| **Ethics & Sovereignty Agent** | Evaluates 7 ethical dimensions |
-| **Governance Agent** | Synthesizes all outputs into a final decision |
+---
 
-## Quick Start
+## 🚀 Getting Started
 
-### 1. Clone and install
+### Prerequisites
+- Python 3.10+
+- An API Key for Google Gemini (used via LiteLLM)
 
+### Installation
+
+1. **Clone the repository and set up a virtual environment:**
 ```bash
-git clone <repo>
-cd GovAgent
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
+```
+
+2. **Install dependencies:**
+```bash
 pip install -e ".[dev]"
 ```
 
-### 2. Configure
-
+3. **Set up your environment variables:**
 ```bash
 cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
+# Open .env and add your GEMINI_API_KEY
 ```
 
-### 3. Run the server
+### Quickstart
 
+**1. Ingest the Policy Corpus**  
+This parses the YAML policies (EU AI Act, GDPR, etc.) and creates local embeddings in ChromaDB.
 ```bash
-uvicorn govagents.api.main:app --reload
+python3 scripts/ingest_policies.py
 ```
 
-The server auto-ingests the built-in policy corpus on first start.
-
-### 4. Open the UI
-
-Navigate to **http://localhost:8000** in your browser.
-
-## CLI Demo
-
+**2. Start the FastAPI Server**
 ```bash
-# Ingest policies manually
-python scripts/ingest_policies.py
-
-# Run a demo assessment
-python scripts/run_demo.py
+uvicorn govagents.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## API
+**3. Run an Assessment**  
+Open your browser to `http://localhost:8000`. You can select an example proposal (e.g., "Employee monitoring") and watch the multi-agent pipeline stream its reasoning in real-time.
 
+---
+
+## 🛠️ Extending the System
+
+GovAgents is designed to be easily extensible. 
+
+### Adding a New Agent
+Because of the Plugin Registry, you can add a new agent simply by subclassing `BaseAgent` and decorating it.
+
+```python
+from govagents.agents.base import BaseAgent
+from govagents.core.registry import registry
+from govagents.core.models import AgentRole
+
+@registry.register_agent("SecurityAgent")
+class SecurityAgent(BaseAgent):
+    role = AgentRole.TECHNICAL
+    description = "Focuses purely on cybersecurity threat modeling."
+    
+    async def run(self, context):
+        # Implementation here
+        pass
+```
+
+### Adding a New Capability (Tool)
+Extract complex logic into capabilities that can be injected into any agent.
+
+```python
+from govagents.capabilities.base import Capability
+from govagents.core.registry import registry
+
+@registry.register_capability("WebSearch")
+class WebSearchCapability(Capability):
+    async def execute(self, query: str):
+        # Perform search and return results
+        return results
+```
+
+---
+
+## 🧪 Testing
+
+GovAgents includes a comprehensive `pytest` suite.
 ```bash
-# Submit assessment
-curl -X POST http://localhost:8000/api/assess \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Employee Monitoring AI",
-    "description": "An AI system that monitors employee communications...",
-    "sector": "enterprise"
-  }'
-
-# Get assessment result
-curl http://localhost:8000/api/assess/{id}
-
-# Stream real-time updates (SSE)
-curl http://localhost:8000/api/assess/{id}/stream
-
-# Browse policy corpus
-curl http://localhost:8000/api/policies
-
-# API docs
-open http://localhost:8000/api/docs
+python3 -m pytest tests/ -v
 ```
 
-## Built-in Policy Corpus
-
-| Policy | Type | Articles |
-|---|---|---|
-| EU AI Act (2024/1689) | Regulation | Art. 6, 9, 10, 11, 13, 14, 15, 26, 50, 99 |
-| GDPR (2016/679) | Regulation | Art. 5, 6, 13, 22, 25, 35, 83 |
-| OECD AI Principles | Framework | Principles 1.1–1.5 |
-| NIST AI RMF | Framework | GOVERN, MAP, MEASURE, MANAGE |
-| EU HLEG AI Guidelines | Guideline | Requirements 1–7 |
-
-## Supported LLM Providers
-
-Configure via `LLM_MODEL` and `LLM_PROVIDER` in `.env`:
-
-| Provider | Model Example | Key Env Var |
-|---|---|---|
-| Gemini | `gemini/gemini-2.0-flash` | `GEMINI_API_KEY` |
-| OpenAI | `gpt-4o` | `OPENAI_API_KEY` |
-| Anthropic | `claude-3-5-sonnet-20241022` | `ANTHROPIC_API_KEY` |
-| Groq | `groq/llama-3.1-70b-versatile` | `GROQ_API_KEY` |
-| Ollama | `ollama/llama3.1` | — |
-
-## Running Tests
-
-```bash
-pytest tests/ -v
-```
-
-## Project Structure
-
-```
-govagents/
-├── core/           # Config, LLM client, data models, logging
-├── agents/         # 6 specialized governance agents
-├── orchestration/  # Pipeline coordinator, message bus, debate protocol
-├── policies/       # Document ingestion, parsing, ChromaDB retrieval
-├── knowledge_graph/# NetworkX-based governance KG (Phase 4)
-├── api/            # FastAPI app with SSE streaming
-├── frontend/       # Rich SPA (HTML/CSS/JS)
-scripts/            # CLI tools
-tests/              # Unit & integration tests
-configs/            # YAML configuration
-```
-
-## Assessment Output
-
-```
-Decision:             CONDITIONAL_APPROVAL
-Overall Risk:         HIGH
-Compliance Confidence: 52%
-Uncertainty:          Moderate
-
-Key Issues:
-  1. Employee monitoring without adequate safeguards
-  2. Transparency requirements not addressed
-  3. No human oversight mechanism defined
-  4. DPIA not conducted (GDPR Art. 35)
-
-Required Actions:
-  [P1] Conduct Data Protection Impact Assessment
-  [P2] Define human oversight procedure
-  [P3] Implement employee transparency mechanism
-  [P4] Integrate explainability into AI pipeline
-
-Evidence: EU AI Act Art. 13, 14 · GDPR Art. 22, 35 · OECD Principle 1.3
-```
+## 📝 License
+MIT License

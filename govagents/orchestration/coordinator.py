@@ -7,14 +7,8 @@ import time
 from datetime import datetime
 from typing import AsyncIterator, Callable
 
-from govagents.agents import (
-    ComplianceAgent,
-    EthicsAgent,
-    GovernanceAgent,
-    PolicyAgent,
-    RiskAgent,
-    TechnicalAgent,
-)
+import govagents.agents  # Trigger registry decorators
+from govagents.core.registry import registry
 from govagents.core.llm import LLMClient, get_llm_client
 from govagents.core.logging import get_logger
 from govagents.core.models import (
@@ -51,13 +45,13 @@ class Coordinator:
         self.bus = message_bus or MessageBus()
         self.debate = DebateProtocol(llm=self.llm)
 
-        # Initialize all agents with shared LLM client
-        self.policy_agent = PolicyAgent(llm_client=self.llm)
-        self.risk_agent = RiskAgent(llm_client=self.llm)
-        self.technical_agent = TechnicalAgent(llm_client=self.llm)
-        self.compliance_agent = ComplianceAgent(llm_client=self.llm)
-        self.ethics_agent = EthicsAgent(llm_client=self.llm)
-        self.governance_agent = GovernanceAgent(llm_client=self.llm)
+        # Initialize all agents using the Registry
+        self.policy_agent = registry.get_agent_class("PolicyAgent")(llm_client=self.llm)
+        self.risk_agent = registry.get_agent_class("RiskAgent")(llm_client=self.llm)
+        self.technical_agent = registry.get_agent_class("TechnicalAgent")(llm_client=self.llm)
+        self.compliance_agent = registry.get_agent_class("ComplianceAgent")(llm_client=self.llm)
+        self.ethics_agent = registry.get_agent_class("EthicsAgent")(llm_client=self.llm)
+        self.governance_agent = registry.get_agent_class("GovernanceAgent")(llm_client=self.llm)
 
     async def assess(
         self,

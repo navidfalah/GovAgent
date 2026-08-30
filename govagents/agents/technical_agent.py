@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from govagents.agents.base import BaseAgent
+from govagents.core.registry import registry
 from govagents.core.models import (
     AgentContext,
     AgentRole,
@@ -13,6 +14,7 @@ from govagents.core.models import (
 )
 
 
+@registry.register_agent("TechnicalAgent")
 class TechnicalAgent(BaseAgent):
     """Analyzes the technical architecture and implementation for governance compliance.
 

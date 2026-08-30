@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from govagents.agents.base import BaseAgent
+from govagents.core.registry import registry
 from govagents.core.models import (
     AgentContext,
     AgentRole,
@@ -14,6 +15,7 @@ from govagents.core.models import (
 )
 
 
+@registry.register_agent("PolicyAgent")
 class PolicyAgent(BaseAgent):
     """Searches the policy corpus and identifies applicable governance requirements.
 

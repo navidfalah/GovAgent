@@ -1,5 +1,6 @@
 """Agents package."""
 
+from govagents.agents.base import BaseAgent
 from govagents.agents.compliance_agent import ComplianceAgent
 from govagents.agents.ethics_agent import EthicsAgent
 from govagents.agents.governance_agent import GovernanceAgent
@@ -8,10 +9,11 @@ from govagents.agents.risk_agent import RiskAgent
 from govagents.agents.technical_agent import TechnicalAgent
 
 __all__ = [
-    "PolicyAgent",
+    "BaseAgent",
     "ComplianceAgent",
-    "RiskAgent",
     "EthicsAgent",
-    "TechnicalAgent",
     "GovernanceAgent",
+    "PolicyAgent",
+    "RiskAgent",
+    "TechnicalAgent",
 ]

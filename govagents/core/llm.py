@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 import litellm
+from pydantic import BaseModel, ValidationError
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -149,6 +150,38 @@ class LLMClient:
 
         text = await self.complete(enhanced, model=model, temperature=temperature, agent_id=agent_id)
         return self._parse_json(text)
+
+    async def structured_completion(
+        self,
+        prompt: str,
+        schema: type[BaseModel],
+        system_prompt: str = "",
+        temperature: float | None = None,
+        agent_id: str | None = None,
+    ) -> BaseModel:
+        """Call the LLM and parse+validate the response against a Pydantic schema.
+
+        Falls back to an unvalidated best-effort construction (defaults filled in
+        for any missing fields) if the model's JSON doesn't cleanly validate, so a
+        single malformed mini-agent response never takes down the whole swarm.
+        """
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt or "Respond with valid JSON only, matching the requested schema.",
+            },
+            {"role": "user", "content": prompt},
+        ]
+        raw = await self.complete_json(messages, temperature=temperature, agent_id=agent_id)
+        try:
+            return schema.model_validate(raw)
+        except ValidationError as e:
+            log.warning(
+                "structured_completion_validation_error",
+                schema=schema.__name__,
+                error=str(e),
+            )
+            return schema.model_construct(**raw)
 
     def _parse_json(self, text: str) -> dict[str, Any]:
         """Extract and parse JSON from LLM output, handling Chain-of-Thought blocks."""

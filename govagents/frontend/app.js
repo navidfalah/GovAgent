@@ -562,13 +562,29 @@ function renderOverview(report) {
     </div>
   ` : '';
 
+  const gateFindings = (report.gate_findings || []).length > 0 ? `
+    <div style="margin-top: 1.5rem;">
+      <h3 style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">Cross-Module Logic Gates</h3>
+      ${report.gate_findings.map(g => `
+        <div class="risk-item">
+          <div class="risk-header">
+            <span class="risk-severity severity-${g.severity}">${g.verdict}</span>
+            <span class="risk-category">${escapeHtml(g.gate_id)}</span>
+            <span class="risk-title">${escapeHtml(g.description)}</span>
+          </div>
+          <div class="risk-desc">${escapeHtml(g.rationale)}</div>
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
+
   return `
     ${issues ? `<div style="margin-bottom: 1.5rem;"><h3 style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">Key Issues</h3><div class="issues-list">${issues}</div></div>` : ''}
     ${actions ? `<div style="margin-bottom: 1.5rem;"><h3 style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">Required Actions</h3><div class="actions-list">${actions}</div></div>` : ''}
     ${evidence ? `<div style="margin-bottom: 1.5rem;"><h3 style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">Evidence Citations</h3><div class="evidence-list">${evidence}</div></div>` : ''}
     ${reasoning}
+    ${gateFindings}
     ${debateSection}
-    ${renderResearch(report.research)}
     <div style="margin-top: 1.5rem; display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">
       <span>Tokens used: ${(report.total_tokens_used || 0).toLocaleString()}</span>
       <span>•</span>
@@ -693,6 +709,19 @@ function renderResearch(research) {
 
 function renderTechnicalTab(report) {
   const output = report.technical_output;
+  if (!output?.findings?.length) return `<div class="empty-state"><div class="empty-icon">🔧</div><p>No technical data available.</p></div>`;
+
+  const findings = output.findings.map(f => `
+    <div class="risk-item">
+      <div class="risk-header">
+        <span class="risk-severity severity-${f.severity}">${f.severity}</span>
+        <span class="risk-title">${escapeHtml(f.title)}</span>
+      </div>
+      <div class="risk-desc">${escapeHtml(f.description)}</div>
+      ${f.implication ? `<div class="risk-desc">↳ ${escapeHtml(f.implication)}</div>` : ''}
+      ${f.recommendation ? `<div class="risk-mitigation">↗ ${escapeHtml(f.recommendation)}</div>` : ''}
+    </div>
+  `).join('');
 
   const debt = output.technical_debt?.length ? `
     <div style="margin-top: 1.5rem; padding: 1rem 1.25rem; background: rgba(34,211,238,0.04); border: 1px solid rgba(34,211,238,0.15); border-radius: var(--radius-md);">
@@ -711,15 +740,130 @@ function renderTechnicalTab(report) {
     </div>
     <div class="tech-findings-list">${findings}</div>
     ${debt}
+    ${renderResearch(output.research)}
+  `;
+}
+
+function renderPolicyTab(report) {
+  const output = report.policy_output;
+  if (!output?.requirements?.length) return `<div class="empty-state"><div class="empty-icon">📜</div><p>No policy data available.</p></div>`;
+
+  const items = output.requirements.map(r => `
+    <div class="compliance-item">
+      <div class="compliance-item-header">
+        <span class="compliance-req-title">${escapeHtml(r.title)}</span>
+        <span class="compliance-confidence">${escapeHtml(r.source_name)}${r.article ? ' · ' + escapeHtml(r.article) : ''}</span>
+      </div>
+      <div class="compliance-reasoning">${escapeHtml(r.text)}</div>
+    </div>
+  `).join('');
+
+  return `
+    <div style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+      ${output.requirements.length} requirement(s) identified · ${output.total_policies_searched || 0} policy excerpts searched
+    </div>
+    <div class="compliance-list">${items}</div>
+    ${renderResearch(output.research)}
+  `;
+}
+
+function renderBiasTab(report) {
+  const output = report.bias_output;
+  if (!output?.findings?.length) return `<div class="empty-state"><div class="empty-icon">⚖️</div><p>No bias data available.</p></div>`;
+
+  const items = output.findings.map(f => `
+    <div class="risk-item">
+      <div class="risk-header">
+        <span class="risk-severity severity-${f.severity}">${f.severity}</span>
+        <span class="risk-category">${escapeHtml(f.bias_type)}</span>
+        <span class="risk-title">${escapeHtml(f.affected_group)}</span>
+      </div>
+      <div class="risk-desc">${escapeHtml(f.description)}</div>
+      ${f.implication ? `<div class="risk-desc">↳ ${escapeHtml(f.implication)}</div>` : ''}
+      ${f.recommendation ? `<div class="risk-mitigation">↗ ${escapeHtml(f.recommendation)}</div>` : ''}
+    </div>
+  `).join('');
+
+  return `
+    <div style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+      Fairness Score: <strong style="color: var(--text-primary);">${(output.fairness_score * 100).toFixed(0)}%</strong>
+    </div>
+    <div class="risk-list">${items}</div>
+    ${renderResearch(output.research)}
+  `;
+}
+
+function renderSecurityTab(report) {
+  const output = report.security_output;
+  if (!output?.vulnerabilities?.length) return `<div class="empty-state"><div class="empty-icon">🛡️</div><p>No security data available.</p></div>`;
+
+  const items = output.vulnerabilities.map(v => `
+    <div class="risk-item">
+      <div class="risk-header">
+        <span class="risk-severity severity-${v.severity}">${v.severity}</span>
+        <span class="risk-category">${escapeHtml(v.component)}</span>
+        ${v.cvss_estimate != null ? `<span class="risk-score">CVSS ${v.cvss_estimate}</span>` : ''}
+      </div>
+      <div class="risk-desc">${escapeHtml(v.vulnerability)}</div>
+    </div>
+  `).join('');
+
+  return `
+    <div style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+      Overall Security Posture: <strong style="color: var(--text-primary);">${escapeHtml(output.overall_security_posture)}</strong>
+    </div>
+    <div class="risk-list">${items}</div>
+    ${renderResearch(output.research)}
+  `;
+}
+
+function renderPrivacyTab(report) {
+  const output = report.privacy_output;
+  if (!output?.findings?.length) return `<div class="empty-state"><div class="empty-icon">🔒</div><p>No privacy data available.</p></div>`;
+
+  const items = output.findings.map(f => `
+    <div class="risk-item">
+      <div class="risk-header">
+        <span class="risk-severity severity-${f.severity}">${f.severity}</span>
+        <span class="risk-category">${escapeHtml(f.data_type)}</span>
+        ${f.gdpr_article ? `<span class="risk-score">${escapeHtml(f.gdpr_article)}</span>` : ''}
+      </div>
+      <div class="risk-desc">${escapeHtml(f.issue)}</div>
+    </div>
+  `).join('');
+
+  return `
+    <div style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
+      <div style="font-size: 0.9rem; color: var(--text-secondary);">PII Handled: <strong style="color: ${output.pii_handled ? 'var(--accent-rose)' : 'var(--accent-emerald)'};">${output.pii_handled ? 'Yes' : 'No'}</strong></div>
+      <div style="font-size: 0.9rem; color: var(--text-secondary);">Data Minimization: <strong style="color: var(--text-primary);">${(output.data_minimization_score * 100).toFixed(0)}%</strong></div>
+    </div>
+    <div class="risk-list">${items}</div>
+    ${renderResearch(output.research)}
+  `;
+}
+
+function renderGuardrailTab(report) {
+  const output = report.guardrail_output;
+  if (!output) return `<div class="empty-state"><div class="empty-icon">🚨</div><p>No guardrail data available.</p></div>`;
+
+  const violations = (output.violations || []).map(v => `<div class="issue-item"><div>${escapeHtml(v)}</div></div>`).join('');
+
+  return `
+    <div style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+      Triggered: <strong style="color: ${output.triggered ? 'var(--accent-rose)' : 'var(--accent-emerald)'};">${output.triggered ? 'YES' : 'No'}</strong>
+    </div>
+    ${violations ? `<div class="issues-list">${violations}</div>` : ''}
+    <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary);">${escapeHtml(output.reasoning || '')}</div>
+    ${renderResearch(output.research)}
   `;
 }
 
 // ── Tab Switching ─────────────────────────────────────────────────────────────
-function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+function switchResultTab(paneId) {
+  document.querySelectorAll('#reportTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.results-content .tab-pane').forEach(p => p.classList.remove('active'));
   event.target.classList.add('active');
-  document.getElementById(`tab-${name}`).classList.add('active');
+  document.getElementById(paneId).classList.add('active');
 }
 
 // ── History ───────────────────────────────────────────────────────────────────

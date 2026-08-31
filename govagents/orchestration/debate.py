@@ -4,13 +4,7 @@ from __future__ import annotations
 
 from govagents.core.llm import LLMClient, get_llm_client
 from govagents.core.logging import get_logger
-from govagents.core.models import (
-    AgentContext,
-    AgentRole,
-    ComplianceStatus,
-    DebatePosition,
-    RiskLevel,
-)
+from govagents.core.models import AgentContext, RiskLevel
 
 log = get_logger(__name__)
 
@@ -28,74 +22,6 @@ class DebateProtocol:
     def __init__(self, llm: LLMClient | None = None, max_rounds: int = 2) -> None:
         self.llm = llm or get_llm_client()
         self.max_rounds = max_rounds
-
-    def detect_disagreements(self, context: AgentContext) -> list[dict]:
-        """Find significant disagreements between agent outputs."""
-        disagreements = []
-
-        if not (context.compliance_output and context.technical_output and context.risk_output):
-            return []
-
-        # Check: Compliance says mostly satisfied but Technical found critical issues
-        critical_technical = [
-            f for f in context.technical_output.findings if f.severity == RiskLevel.CRITICAL
-        ]
-        if (
-            context.compliance_output.overall_compliance_score > 0.7
-            and len(critical_technical) > 0
-        ):
-            disagreements.append(
-                {
-                    "type": "compliance_vs_technical",
-                    "description": (
-                        f"Compliance Agent assessed high compliance "
-                        f"({context.compliance_output.overall_compliance_score:.2f}) "
-                        f"but Technical Agent found {len(critical_technical)} CRITICAL issues"
-                    ),
-                    "agents": [AgentRole.COMPLIANCE, AgentRole.TECHNICAL],
-                    "severity": "HIGH",
-                }
-            )
-
-        # Check: Risk is CRITICAL but Compliance says SATISFIED
-        if (
-            context.risk_output.overall_risk_level == RiskLevel.CRITICAL
-            and context.compliance_output.overall_status == ComplianceStatus.SATISFIED
-        ):
-            disagreements.append(
-                {
-                    "type": "risk_vs_compliance",
-                    "description": (
-                        "Risk Agent identified CRITICAL overall risk "
-                        "while Compliance Agent assessed full compliance — this is contradictory"
-                    ),
-                    "agents": [AgentRole.RISK, AgentRole.COMPLIANCE],
-                    "severity": "CRITICAL",
-                }
-            )
-
-        # Check: Ethics very low but Compliance scored high
-        if context.ethics_output:
-            if (
-                context.ethics_output.overall_score < 0.4
-                and context.compliance_output.overall_compliance_score > 0.65
-            ):
-                disagreements.append(
-                    {
-                        "type": "ethics_vs_compliance",
-                        "description": (
-                            f"Ethics Agent scored poorly ({context.ethics_output.overall_score:.2f}) "
-                            f"while Compliance Agent scored well ({context.compliance_output.overall_compliance_score:.2f}) — "
-                            "ethical requirements may be insufficiently weighted"
-                        ),
-                        "agents": [AgentRole.ETHICS, AgentRole.COMPLIANCE],
-                        "severity": "MEDIUM",
-                    }
-                )
-
-        if disagreements:
-            log.info("disagreements_detected", count=len(disagreements))
-        return disagreements
 
     async def run_debate(
         self, context: AgentContext, disagreements: list[dict]
@@ -121,11 +47,13 @@ class DebateProtocol:
         self, context: AgentContext, disagreement: dict
     ) -> dict:
         """Run a single disagreement through the debate protocol."""
-        prompt = f"""Two AI governance agents have reached conflicting conclusions.
+        prompt = f"""Two or more AI governance modules have reached conflicting conclusions,
+detected by a cross-module logic gate.
 
 ## Disagreement
 
 {disagreement["description"]}
+Gate rationale: {disagreement.get("rationale", "")}
 
 ## Full Context
 
@@ -146,6 +74,11 @@ High: {sum(1 for f in context.technical_output.findings if f.severity == RiskLev
 
 ### Ethics Score
 {context.ethics_output.overall_score if context.ethics_output else "N/A"}
+
+### Privacy / Security / Bias
+Privacy findings: {len(context.privacy_output.findings) if context.privacy_output else "N/A"}
+Security posture: {context.security_output.overall_security_posture if context.security_output else "N/A"}
+Bias fairness score: {context.bias_output.fairness_score if context.bias_output else "N/A"}
 
 ## Task
 

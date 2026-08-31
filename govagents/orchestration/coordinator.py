@@ -13,11 +13,14 @@ from govagents.core.llm import LLMClient, get_llm_client
 from govagents.core.logging import get_logger
 from govagents.core.models import (
     AgentContext,
+    DecisionType,
+    GateVerdict,
     GovernanceReport,
     Proposal,
     SSEEvent,
 )
 from govagents.orchestration.debate import DebateProtocol
+from govagents.orchestration.logic_gates import LogicGateEngine
 from govagents.orchestration.message_bus import MessageBus
 
 log = get_logger(__name__)
@@ -44,6 +47,7 @@ class Coordinator:
         self.llm = llm or get_llm_client()
         self.bus = message_bus or MessageBus()
         self.debate = DebateProtocol(llm=self.llm)
+        self.gates = LogicGateEngine()
 
         # Initialize all agents using the Registry
         self.policy_agent = registry.get_agent_class("PolicyAgent")(llm_client=self.llm)
@@ -186,23 +190,49 @@ class Coordinator:
             if proposal.pipeline_config.guardrail.enabled:
                 await emit("agent_start", agent="guardrail", data={"message": "Checking absolute red lines..."})
                 guard_out = await self.guardrail_agent.run(context, emit_callback=emit)
-                if guard_out.triggered:
-                    await emit("agent_complete", agent="guardrail", data={
-                        "message": f"GUARDRAIL TRIGGERED: {len(guard_out.violations)} violation(s)"
-                    })
-                    # TODO: Fast fail pipeline if guardrail triggers
-                else:
-                    await emit("agent_complete", agent="guardrail", data={
-                        "message": "No red lines triggered."
-                    })
+                await emit("agent_complete", agent="guardrail", data={
+                    "message": (
+                        f"GUARDRAIL TRIGGERED: {len(guard_out.violations)} violation(s)"
+                        if guard_out.triggered else "No red lines triggered."
+                    )
+                })
 
-            # ── Phase 4: Debate (if disagreements) ───────────────────────────
+            # ── Phase 4: Cross-Module Logic Gates ─────────────────────────────
+            # This is where modules are forced into relation with each other: every
+            # gate is an explicit condition spanning two or more modules' structured
+            # outputs, catching contradictions the individual LLM calls would miss.
+            await emit("phase_start", data={"phase": "cross_module_logic_gates", "phase_num": 4})
+            gate_findings = self.gates.evaluate(context)
+            context.gate_findings = gate_findings
+            guardrail_veto = any(g.verdict == GateVerdict.VETO for g in gate_findings)
+
+            for g in gate_findings:
+                await emit("gate_triggered", data={
+                    "gate_id": g.gate_id,
+                    "verdict": g.verdict.value,
+                    "severity": g.severity.value,
+                    "description": g.description,
+                    "rationale": g.rationale,
+                    "message": f"⚖ {g.gate_id} [{g.verdict.value}]: {g.description}",
+                })
+
+            # ── Phase 4b: Debate — every ESCALATE gate forces a debate round ──
             debate_log = []
-            disagreements = self.debate.detect_disagreements(context)
-            if disagreements:
+            escalations = [g for g in gate_findings if g.verdict == GateVerdict.ESCALATE]
+            if escalations and not guardrail_veto:
+                disagreements = [
+                    {
+                        "type": g.gate_id,
+                        "description": g.description,
+                        "agents": g.involved_agents,
+                        "severity": g.severity.value,
+                        "rationale": g.rationale,
+                    }
+                    for g in escalations
+                ]
                 await emit("debate_start", data={
                     "disagreements": len(disagreements),
-                    "message": f"Detected {len(disagreements)} disagreement(s) — running debate..."
+                    "message": f"{len(disagreements)} logic gate(s) escalated — running debate..."
                 })
                 log.info("running_debate", disagreements=len(disagreements))
                 debate_log = await self.debate.run_debate(context, disagreements)
@@ -222,11 +252,23 @@ class Coordinator:
                 report.agent_disagreements = [
                     d.get("disagreement", {}).get("description", "") for d in debate_log
                 ]
+            report.gate_findings = gate_findings
+
+            # A guardrail VETO is a hard override, deterministic regardless of what the
+            # Governance Agent's LLM call produced — it is never up for debate.
+            veto_message = ""
+            if guardrail_veto:
+                report.decision = DecisionType.REJECTED
+                report.guardrail_veto = True
+                veto_gate = next(g for g in gate_findings if g.verdict == GateVerdict.VETO)
+                if veto_gate.description not in report.key_issues:
+                    report.key_issues.insert(0, f"[GUARDRAIL VETO] {veto_gate.description}")
+                veto_message = " — forced by guardrail veto, non-negotiable"
 
             elapsed = time.perf_counter() - start_time
             report.processing_time_seconds = elapsed
             report.total_tokens_used = self.llm.get_usage_stats()["total_tokens"]
-            
+
             if hasattr(report, "completed_at"):
                 report.completed_at = datetime.utcnow()
 
@@ -234,7 +276,7 @@ class Coordinator:
                 "decision": report.decision.value,
                 "risk": report.overall_risk.value,
                 "confidence": round(report.compliance_confidence, 2),
-                "message": f"Decision: {report.decision.value}"
+                "message": f"Decision: {report.decision.value}{veto_message}"
             })
 
             await emit("done", data={

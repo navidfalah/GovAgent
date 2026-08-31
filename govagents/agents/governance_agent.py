@@ -1,7 +1,7 @@
-from typing import Callable
 """Governance Agent — synthesizes all agent outputs into a final governance decision."""
 
 from __future__ import annotations
+from typing import Callable
 
 from govagents.agents.base import BaseAgent
 from govagents.core.registry import registry
@@ -35,14 +35,25 @@ class GovernanceAgent(BaseAgent):
     def system_prompt(self) -> str:
         return """You are the Governance Agent — the final decision-maker in an AI governance assessment system.
 
-You receive structured assessments from five specialized agents:
+You receive structured assessments from nine specialized modules, each of which ran its own
+parallel team of mini-agents before reaching its own conclusion:
 - Policy Agent: Which requirements apply
 - Compliance Agent: Whether requirements are met
 - Risk Agent: What risks exist
 - Ethics Agent: Ethical and sovereignty dimensions
 - Technical Agent: Technical compliance gaps
+- Privacy Agent: PII handling and data minimization
+- Security Agent: Vulnerabilities and threat posture
+- Bias Agent: Fairness and discrimination risk
+- Guardrail Agent: Absolute red lines (non-negotiable if triggered)
 
-Your job is to synthesize these into a single, coherent governance decision.
+You also receive the output of a Cross-Module Logic Gate engine that already checked these
+modules against each other for contradictions (e.g. high compliance score despite CRITICAL
+technical findings). Gates marked VETO are final and not yours to override. Gates marked
+ESCALATE were already sent through a debate round — treat their resolution as authoritative
+context. Gates marked FLAG are for you to weigh explicitly in your reasoning.
+
+Your job is to synthesize all of this into a single, coherent governance decision.
 
 Decision framework:
 - APPROVED: High compliance confidence, LOW or MEDIUM overall risk, ethics score > 0.7
@@ -216,6 +227,10 @@ Provide 3-6 key issues, 4-8 required actions, and clear governance reasoning."""
             risk_output=context.risk_output,
             ethics_output=context.ethics_output,
             technical_output=context.technical_output,
+            privacy_output=context.privacy_output,
+            security_output=context.security_output,
+            bias_output=context.bias_output,
+            guardrail_output=context.guardrail_output,
             key_issues=raw.get("key_issues", []),
             required_actions=actions,
             evidence_citations=raw.get("evidence_citations", []),
@@ -312,5 +327,51 @@ Provide 3-6 key issues, 4-8 required actions, and clear governance reasoning."""
                 + "\n".join(findings)
                 + f"\n\nReasoning: {t.reasoning}"
             )
+
+        if context.privacy_output:
+            pr = context.privacy_output
+            findings = [f"- [{f.severity.value}] {f.data_type}: {f.issue[:120]}" for f in pr.findings[:6]]
+            sections.append(
+                f"### Privacy Agent Output\n"
+                f"PII Handled: {pr.pii_handled} | Data Minimization Score: {pr.data_minimization_score:.2f}\n"
+                + "\n".join(findings)
+                + f"\n\nReasoning: {pr.reasoning}"
+            )
+
+        if context.security_output:
+            se = context.security_output
+            vulns = [f"- [{v.severity.value}] {v.component}: {v.vulnerability[:120]}" for v in se.vulnerabilities[:6]]
+            sections.append(
+                f"### Security Agent Output\n"
+                f"Overall Posture: {se.overall_security_posture}\n"
+                + "\n".join(vulns)
+                + f"\n\nReasoning: {se.reasoning}"
+            )
+
+        if context.bias_output:
+            bi = context.bias_output
+            findings = [f"- [{f.severity.value}] {f.affected_group}: {f.description[:120]}" for f in bi.findings[:6]]
+            sections.append(
+                f"### Bias Agent Output\n"
+                f"Fairness Score: {bi.fairness_score:.2f}\n"
+                + "\n".join(findings)
+                + f"\n\nReasoning: {bi.reasoning}"
+            )
+
+        if context.guardrail_output:
+            g = context.guardrail_output
+            sections.append(
+                f"### Guardrail Agent Output\n"
+                f"Triggered: {g.triggered}\n"
+                + "\n".join(f"- {v}" for v in g.violations[:5])
+                + f"\n\nReasoning: {g.reasoning}"
+            )
+
+        if context.gate_findings:
+            gate_lines = [
+                f"- [{gf.verdict.value}/{gf.severity.value}] {gf.gate_id}: {gf.description} — {gf.rationale[:200]}"
+                for gf in context.gate_findings
+            ]
+            sections.append("### Cross-Module Logic Gate Findings\n" + "\n".join(gate_lines))
 
         return "\n\n".join(sections) if sections else "No agent outputs available."

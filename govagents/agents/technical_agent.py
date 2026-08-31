@@ -1,7 +1,7 @@
-from typing import Callable
 """Technical Agent — analyzes the proposed architecture for technical compliance gaps."""
 
 from __future__ import annotations
+from typing import Callable
 
 from govagents.agents.base import BaseAgent
 from govagents.core.registry import registry
@@ -9,6 +9,7 @@ from govagents.core.models import (
     AgentContext,
     AgentRole,
     MessageType,
+    MiniAgentTask,
     RiskLevel,
     TechnicalAgentOutput,
     TechnicalFinding,
@@ -58,9 +59,42 @@ A finding is HIGH if it creates significant compliance risk.
 
 You MUST respond with valid JSON following the exact schema specified."""
 
+    def mini_agent_tasks(self, context: AgentContext) -> list[MiniAgentTask]:
+        """Four parallel technical auditors, each owning one architectural layer."""
+        proposal = context.proposal
+        details = proposal.technical_details or proposal.description[:300]
+
+        return [
+            self._mini_task(
+                1, "data_pipeline_audit",
+                f"Audit the data architecture implied by '{proposal.title}' ({details}) for lineage, quality "
+                "controls, access controls, and retention gaps. What is missing or unspecified?",
+                use_web_search=False,
+            ),
+            self._mini_task(
+                2, "explainability_auditability",
+                f"Assess whether '{proposal.title}' ({details}) has (or plausibly needs) an explainability and "
+                "audit-trail mechanism. Search for standard explainability techniques used in comparable systems.",
+            ),
+            self._mini_task(
+                3, "security_integration_gaps",
+                f"Identify technical security integration gaps (authN/authZ, encryption, adversarial robustness) "
+                f"in the architecture implied by: {details}.",
+                use_web_search=False,
+            ),
+            self._mini_task(
+                4, "vendor_supply_chain",
+                f"Identify third-party/vendor and supply-chain dependencies implied by '{proposal.title}' and any "
+                "known governance or sovereignty risks tied to those dependencies.",
+            ),
+        ]
+
     async def run(self, context: AgentContext, emit_callback: Callable = None) -> TechnicalAgentOutput:
         proposal = context.proposal
         requirements = context.retrieved_requirements
+
+        # Dispatch the parallel technical-audit team before forming a judgment
+        mini_findings = await self._run_mini_swarm(context, emit_callback)
 
         req_types = list({r.requirement_type for r in requirements})
         req_summary = ", ".join(req_types) if req_types else "general governance"
@@ -110,15 +144,10 @@ Respond with this JSON structure:
 
 Identify 4-10 specific technical findings. Focus on governance-relevant technical gaps."""
 
+        mini_findings_text = self._format_mini_findings(mini_findings)
+        if mini_findings_text:
+            user_prompt += f"\n\n{mini_findings_text}"
 
-        # --- Sub-Agent Planning & Research ---
-        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
-        if research_results:
-            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
-            for r in research_results:
-                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
-            user_prompt += f"\n\n{research_text}"
-        # ------------------------------------
         self.log.info("technical_agent_analyzing")
 
         raw = await self.llm.complete_json(
@@ -142,13 +171,20 @@ Identify 4-10 specific technical findings. Focus on governance-relevant technica
                 self.log.warning("finding_parse_error", error=str(e), data=f)
 
         output = TechnicalAgentOutput(
-            research=research_results,
+            research=[f.as_research_report() for f in mini_findings],
             findings=findings,
             architecture_compliant=bool(raw.get("architecture_compliant", False)),
             technical_debt=raw.get("technical_debt", []),
             reasoning=raw.get("reasoning", ""),
         )
         context.technical_output = output
+        self._deposit_knowledge(
+            context,
+            content=f"Technical: architecture_compliant={output.architecture_compliant}. {output.reasoning}",
+            topic="technical_conclusion",
+            tags=["technical", "architecture"],
+            certainty_score=0.7,
+        )
 
         self._emit_message(
             context,
@@ -163,15 +199,6 @@ Identify 4-10 specific technical findings. Focus on governance-relevant technica
             },
         )
 
-
-        # --- Sub-Agent Planning & Research ---
-        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
-        if research_results:
-            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
-            for r in research_results:
-                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
-            user_prompt += f"\n\n{research_text}"
-        # ------------------------------------
         self.log.info(
             "technical_agent_complete",
             findings=len(findings),

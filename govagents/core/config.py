@@ -58,6 +58,15 @@ class Settings(BaseSettings):
     max_debate_rounds: int = 2
     disagreement_threshold: float = 0.3  # min confidence gap to trigger debate
 
+    # ── Mini-Agent Swarms ─────────────────────────────────────────────────────
+    mini_agents_per_module: int = 5  # target team size per governance module
+    mini_agent_max_concurrency: int = 8  # global cap on concurrent mini-agent LLM calls
+    enable_mini_agent_web_search: bool = True
+
+    # ── Cross-Module Logic Gates ──────────────────────────────────────────────
+    evidence_sufficiency_threshold: float = 0.4  # min avg mini-agent certainty before a clean approval
+    correlated_concern_min_modules: int = 3  # modules independently flagging the same concern to escalate
+
     # ── API ───────────────────────────────────────────────────────────────────
     api_host: str = "0.0.0.0"
     api_port: int = 8000

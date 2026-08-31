@@ -1,7 +1,7 @@
-from typing import Callable
 """Policy Agent — identifies relevant governance requirements from the policy corpus."""
 
 from __future__ import annotations
+from typing import Callable
 
 import json
 
@@ -11,6 +11,7 @@ from govagents.core.models import (
     AgentContext,
     AgentRole,
     MessageType,
+    MiniAgentTask,
     PolicyAgentOutput,
     PolicyRequirement,
 )
@@ -49,11 +50,42 @@ Your output should be grounded in the retrieved policy chunks provided to you.
 
 You MUST respond with valid JSON following the exact schema specified."""
 
+    def mini_agent_tasks(self, context: AgentContext) -> list[MiniAgentTask]:
+        """Four parallel policy scouts that complement the local corpus with live regulatory research."""
+        proposal = context.proposal
+        sector = proposal.sector or "general"
+
+        return [
+            self._mini_task(
+                1, "recent_regulatory_updates",
+                f"Find the most recent (last 12 months) regulatory updates, amendments, or guidance relevant to "
+                f"an AI system like '{proposal.title}': {proposal.description[:250]}",
+            ),
+            self._mini_task(
+                2, "sector_specific_rules",
+                f"Find sector-specific AI governance rules for the {sector} sector that go beyond general "
+                f"frameworks like the EU AI Act or GDPR, relevant to '{proposal.title}'.",
+            ),
+            self._mini_task(
+                3, "comparative_international_frameworks",
+                f"Compare how at least two different regulatory regimes (e.g. EU, US, or another relevant "
+                f"jurisdiction) would each classify and regulate a system like '{proposal.title}'.",
+            ),
+            self._mini_task(
+                4, "enforcement_and_guidance_watch",
+                f"Find any regulator guidance documents, FAQs, or enforcement priorities specifically about "
+                f"systems similar to '{proposal.title}' in {sector}.",
+            ),
+        ]
+
     async def run(self, context: AgentContext, emit_callback: Callable = None) -> PolicyAgentOutput:
         from govagents.policies.retrieval import get_retriever
 
         proposal = context.proposal
         retriever = get_retriever()
+
+        # Dispatch the parallel policy-scout team (live research) alongside local corpus retrieval
+        mini_findings = await self._run_mini_swarm(context, emit_callback)
 
         # Build search queries targeting different governance dimensions
         search_queries = [
@@ -126,6 +158,10 @@ Requirement types can be: transparency | human_oversight | privacy | risk_manage
 
 Extract 5-12 of the most relevant requirements. For each requirement, use the actual text from the policy excerpts where possible."""
 
+        mini_findings_text = self._format_mini_findings(mini_findings)
+        if mini_findings_text:
+            user_prompt += f"\n\n{mini_findings_text}"
+
         self.log.info("policy_agent_searching", queries=len(search_queries), chunks=len(all_chunks))
 
         raw = await self.llm.complete_json(
@@ -161,11 +197,19 @@ Extract 5-12 of the most relevant requirements. For each requirement, use the ac
             search_queries=raw.get("search_queries", search_queries),
             total_policies_searched=raw.get("total_policies_searched", len(all_chunks)),
             reasoning=raw.get("reasoning", ""),
+            research=[f.as_research_report() for f in mini_findings],
         )
 
         # Store in context for other agents
         context.retrieved_requirements = requirements
         context.policy_output = output
+        self._deposit_knowledge(
+            context,
+            content=f"Policy: {len(requirements)} requirement(s) identified. {output.reasoning}",
+            topic="policy_conclusion",
+            tags=["policy", "requirements"],
+            certainty_score=0.7,
+        )
 
         self._emit_message(
             context,

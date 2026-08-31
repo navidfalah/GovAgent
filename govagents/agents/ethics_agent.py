@@ -1,7 +1,7 @@
-from typing import Callable
 """Ethics & Sovereignty Agent — evaluates ethical and digital sovereignty dimensions."""
 
 from __future__ import annotations
+from typing import Callable
 
 from govagents.agents.base import BaseAgent
 from govagents.core.registry import registry
@@ -12,6 +12,7 @@ from govagents.core.models import (
     EthicsAgentOutput,
     EthicsDimension,
     MessageType,
+    MiniAgentTask,
 )
 
 
@@ -65,8 +66,49 @@ Be particularly attentive to:
 
 You MUST respond with valid JSON following the exact schema specified."""
 
+    def mini_agent_tasks(self, context: AgentContext) -> list[MiniAgentTask]:
+        """Five parallel ethics auditors, each owning a cluster of dimensions."""
+        proposal = context.proposal
+        desc = proposal.description[:300]
+
+        return [
+            self._mini_task(
+                1, "transparency_explainability",
+                f"Assess transparency and explainability for '{proposal.title}': {desc}. Can affected parties "
+                "understand how it makes decisions about them? What disclosure mechanisms are described or missing?",
+                use_web_search=False,
+            ),
+            self._mini_task(
+                2, "accountability_oversight",
+                f"Assess accountability and human oversight for '{proposal.title}': {desc}. Who is responsible "
+                "when it makes a harmful decision, and is meaningful human control preserved?",
+                use_web_search=False,
+            ),
+            self._mini_task(
+                3, "fairness_autonomy",
+                f"Assess fairness and human autonomy implications of '{proposal.title}': {desc}. Could it produce "
+                "inequitable outcomes or erode the affected parties' decision-making agency?",
+                use_web_search=False,
+            ),
+            self._mini_task(
+                4, "vulnerable_groups_power_imbalance",
+                f"Search for documented ethical concerns (power imbalance, vulnerable-group impact, lack of "
+                f"recourse) in real-world deployments comparable to '{proposal.title}' in {proposal.sector or 'this sector'}.",
+            ),
+            self._mini_task(
+                5, "digital_sovereignty",
+                f"Assess digital sovereignty implications of '{proposal.title}': {desc}. Does data or model "
+                "control flow to third countries or foreign vendors? Search for sovereignty guidance relevant "
+                f"to {proposal.organization or 'the deploying organization'}.",
+            ),
+        ]
+
     async def run(self, context: AgentContext, emit_callback: Callable = None) -> EthicsAgentOutput:
         proposal = context.proposal
+
+        # Dispatch the parallel ethics-auditor team before forming a judgment
+        mini_findings = await self._run_mini_swarm(context, emit_callback)
+
         risk_summary = ""
         if context.risk_output:
             top_risks = context.risk_output.risks[:5]
@@ -172,15 +214,10 @@ Respond with this JSON structure:
 
 You MUST assess all 7 dimensions: transparency, accountability, privacy, human_oversight, fairness, autonomy, digital_sovereignty"""
 
+        mini_findings_text = self._format_mini_findings(mini_findings)
+        if mini_findings_text:
+            user_prompt += f"\n\n{mini_findings_text}"
 
-        # --- Sub-Agent Planning & Research ---
-        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
-        if research_results:
-            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
-            for r in research_results:
-                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
-            user_prompt += f"\n\n{research_text}"
-        # ------------------------------------
         self.log.info("ethics_agent_evaluating")
 
         raw = await self.llm.complete_json(
@@ -209,13 +246,20 @@ You MUST assess all 7 dimensions: transparency, accountability, privacy, human_o
             overall_score = sum(d.score for d in dimensions) / len(dimensions)
 
         output = EthicsAgentOutput(
-            research=research_results,
+            research=[f.as_research_report() for f in mini_findings],
             dimensions=dimensions,
             overall_score=overall_score,
             sovereignty_concerns=raw.get("sovereignty_concerns", []),
             reasoning=raw.get("reasoning", ""),
         )
         context.ethics_output = output
+        self._deposit_knowledge(
+            context,
+            content=f"Ethics: overall score {overall_score:.2f}. {output.reasoning}",
+            topic="ethics_conclusion",
+            tags=["ethics", "sovereignty"],
+            certainty_score=0.7,
+        )
 
         self._emit_message(
             context,
@@ -228,15 +272,6 @@ You MUST assess all 7 dimensions: transparency, accountability, privacy, human_o
             },
         )
 
-
-        # --- Sub-Agent Planning & Research ---
-        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
-        if research_results:
-            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
-            for r in research_results:
-                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
-            user_prompt += f"\n\n{research_text}"
-        # ------------------------------------
         self.log.info(
             "ethics_agent_complete",
             score=overall_score,

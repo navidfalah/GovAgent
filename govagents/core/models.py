@@ -48,6 +48,10 @@ class AgentRole(str, Enum):
     RISK = "risk"
     ETHICS = "ethics"
     TECHNICAL = "technical"
+    PRIVACY = "privacy"
+    SECURITY = "security"
+    BIAS = "bias"
+    GUARDRAIL = "guardrail"
     GOVERNANCE = "governance"
     ORCHESTRATOR = "orchestrator"
 
@@ -213,9 +217,10 @@ class EthicsDimension(BaseModel):
 
 
 class TechnicalFinding(BaseModel):
-    component: str
-    description: str
+    title: str
     severity: RiskLevel
+    description: str
+    implication: str
     recommendation: str
 
 class PrivacyFinding(BaseModel):
@@ -247,9 +252,49 @@ class ResearchReport(BaseModel):
     certainty_score: float = Field(ge=0.0, le=1.0)
     sources: list[str] = Field(default_factory=list)
 
-class AgentPlan(BaseModel):
-    needs_research: bool
-    search_queries: list[str] = Field(default_factory=list)
+
+class MiniAgentTask(BaseModel):
+    """A single, narrow assignment handed to one mini-agent within a module's swarm.
+
+    Every governance module (Policy, Compliance, Risk, Ethics, ...) decomposes its
+    section of the assessment into several of these — one mini-agent per task — and
+    runs them concurrently, the same way a team lead would dispatch several analysts
+    to each dig into one specific angle before reporting back.
+    """
+
+    id: str
+    focus: str
+    instruction: str
+    use_web_search: bool = True
+
+
+class MiniAgentFinding(BaseModel):
+    """The structured brief a mini-agent reports back to its parent module."""
+
+    task_id: str = ""
+    focus: str = ""
+    summary: str = ""
+    findings: list[str] = Field(default_factory=list)
+    certainty_score: float = Field(ge=0.0, le=1.0, default=0.0)
+    concern_level: RiskLevel = RiskLevel.LOW
+    sources: list[str] = Field(default_factory=list)
+    recommendation: str = ""
+
+    # Recursive micro-agent spawning: a mini-agent that surfaces something
+    # concerning but under-investigated can request ONE narrower follow-up
+    # agent rather than guessing. Depth is capped by the swarm, not here.
+    needs_followup: bool = False
+    followup_question: str = ""
+    depth: int = 0
+
+    def as_research_report(self) -> "ResearchReport":
+        """Adapt this finding into the legacy ResearchReport shape used by the UI."""
+        return ResearchReport(
+            query=f"[{self.focus}] {self.summary}" if self.summary else self.focus,
+            findings=self.findings,
+            certainty_score=self.certainty_score,
+            sources=self.sources,
+        )
 
 class PolicyAgentOutput(BaseModel):
     requirements: list[PolicyRequirement]
@@ -342,6 +387,62 @@ class DebatePosition(BaseModel):
     concedes: bool = False
 
 
+# ── Cross-Module Logical Gates ────────────────────────────────────────────────
+
+
+class GateVerdict(str, Enum):
+    """The action a cross-module logic gate demands once its condition fires."""
+
+    VETO = "VETO"  # hard stop — forces a specific final decision, no override
+    ESCALATE = "ESCALATE"  # forces a debate round / deeper reasoning pass
+    FLAG = "FLAG"  # informational — surfaced to the Governance Agent, not binding
+    CLEAR = "CLEAR"  # gate evaluated, condition did not fire
+
+
+class GateFinding(BaseModel):
+    """The result of evaluating one cross-module logical gate against the full
+    body of module outputs and mini-agent evidence. Gates are how modules are
+    forced to reason about *each other*, not just their own narrow slice."""
+
+    gate_id: str
+    description: str
+    verdict: GateVerdict
+    severity: RiskLevel = RiskLevel.MEDIUM
+    involved_agents: list[AgentRole] = Field(default_factory=list)
+    rationale: str = ""
+
+
+# ── Shared Knowledge Pool ─────────────────────────────────────────────────────
+
+
+class KnowledgeScope(str, Enum):
+    """Who is allowed to read a knowledge pool entry."""
+
+    MODULE_PRIVATE = "module_private"  # only the module (and its own mini-agents) that wrote it
+    SHARED = "shared"  # any module or mini-agent across the whole pipeline
+    GOVERNANCE_ONLY = "governance_only"  # only the final Governance Agent synthesis
+
+
+class KnowledgeEntry(BaseModel):
+    """One deposit into the shared knowledge pool.
+
+    Mini-agents, micro-agents, and modules all deposit what they learn here.
+    Reads are never a blind dump of the whole pool — `query_knowledge` scores
+    entries by scope + tag/topic relevance to the reader before returning
+    anything, so access is deliberately attention-filtered rather than open.
+    """
+
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    source_agent: AgentRole
+    source_kind: str = "module"  # "module" | "mini_agent" | "micro_agent"
+    topic: str = ""
+    tags: list[str] = Field(default_factory=list)
+    content: str
+    certainty_score: float = Field(ge=0.0, le=1.0, default=0.5)
+    scope: KnowledgeScope = KnowledgeScope.SHARED
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 # ── Final Governance Report ───────────────────────────────────────────────────
 
 
@@ -389,6 +490,10 @@ class GovernanceReport(BaseModel):
     debate_rounds: list[dict[str, Any]] = Field(default_factory=list)
     agent_disagreements: list[str] = Field(default_factory=list)
 
+    # Cross-module logic gates
+    gate_findings: list[GateFinding] = Field(default_factory=list)
+    guardrail_veto: bool = False
+
     # Metadata
     created_at: datetime = Field(default_factory=datetime.utcnow)
     processing_time_seconds: float = 0.0
@@ -420,6 +525,14 @@ class AgentContext(BaseModel):
     messages: list[AgentMessage] = Field(default_factory=list)
     token_usage: dict[str, int] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    # Mini-agent swarms: role.value -> the findings its parallel specialist team produced
+    mini_agent_findings: dict[str, list[MiniAgentFinding]] = Field(default_factory=dict)
+    # Cross-module logic gate results, populated after the DAG phase completes
+    gate_findings: list[GateFinding] = Field(default_factory=list)
+    # Shared knowledge pool: every mini-agent, micro-agent, and module deposits what it
+    # learns here; reads go through attention-filtered access control, never a raw dump.
+    knowledge_pool: list[KnowledgeEntry] = Field(default_factory=list)
 
 
 # ── API Schemas ───────────────────────────────────────────────────────────────

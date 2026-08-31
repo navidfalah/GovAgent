@@ -1,7 +1,7 @@
-from typing import Callable
 """Risk Agent — identifies and scores technical, organizational, and AI-specific risks."""
 
 from __future__ import annotations
+from typing import Callable
 
 from govagents.agents.base import BaseAgent
 from govagents.core.registry import registry
@@ -9,6 +9,7 @@ from govagents.core.models import (
     AgentContext,
     AgentRole,
     MessageType,
+    MiniAgentTask,
     RiskAgentOutput,
     RiskItem,
     RiskLevel,
@@ -59,9 +60,50 @@ Severity guidelines:
 
 You MUST respond with valid JSON following the exact schema specified."""
 
+    def mini_agent_tasks(self, context: AgentContext) -> list[MiniAgentTask]:
+        """Five parallel risk scanners, each owning one category of risk vector."""
+        proposal = context.proposal
+        desc = proposal.description[:300]
+        sector = proposal.sector or "this sector"
+
+        return [
+            self._mini_task(
+                1, "technical_risk",
+                f"Identify technical/model risks (failure modes, adversarial robustness, distribution shift, "
+                f"data quality) specific to '{proposal.title}': {desc}. Look for known failure patterns in "
+                "comparable systems.",
+            ),
+            self._mini_task(
+                2, "legal_regulatory_risk",
+                f"Identify legal and regulatory risk exposure — penalties, liability, non-compliance fines — "
+                f"for a system like '{proposal.title}' operating in {sector}. Cite real regulatory penalty ranges "
+                "where possible.",
+            ),
+            self._mini_task(
+                3, "operational_risk",
+                f"Identify operational risks (monitoring gaps, incident response readiness, vendor lock-in, "
+                f"continuity) for deploying '{proposal.title}' in context: {proposal.deployment_context or 'unspecified'}.",
+                use_web_search=False,
+            ),
+            self._mini_task(
+                4, "reputational_societal_risk",
+                f"Identify reputational and societal risks (public trust, stakeholder backlash, digital divide) "
+                f"if '{proposal.title}' were deployed. Search for public reactions to similar deployments in {sector}.",
+            ),
+            self._mini_task(
+                5, "adversarial_threat_scenario",
+                f"Construct the single most plausible adversarial or misuse scenario against '{proposal.title}': "
+                f"{desc}. Who would exploit it, how, and what is the worst-case impact?",
+                use_web_search=False,
+            ),
+        ]
+
     async def run(self, context: AgentContext, emit_callback: Callable = None) -> RiskAgentOutput:
         proposal = context.proposal
         requirements = context.retrieved_requirements
+
+        # Dispatch the parallel risk-scanner team before forming a judgment
+        mini_findings = await self._run_mini_swarm(context, emit_callback)
 
         req_summary = "\n".join([f"- {r.title}: {r.requirement_type}" for r in requirements[:10]])
 
@@ -108,15 +150,10 @@ Respond with this JSON structure:
 Identify 5-12 specific, relevant risks. Each risk must have a concrete mitigation strategy.
 Risk score (0.0-1.0) represents the aggregate risk exposure."""
 
+        mini_findings_text = self._format_mini_findings(mini_findings)
+        if mini_findings_text:
+            user_prompt += f"\n\n{mini_findings_text}"
 
-        # --- Sub-Agent Planning & Research ---
-        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
-        if research_results:
-            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
-            for r in research_results:
-                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
-            user_prompt += f"\n\n{research_text}"
-        # ------------------------------------
         self.log.info("risk_agent_analyzing")
 
         raw = await self.llm.complete_json(
@@ -163,13 +200,20 @@ Risk score (0.0-1.0) represents the aggregate risk exposure."""
         risk_score = float(raw.get("risk_score", 0.5))
 
         output = RiskAgentOutput(
-            research=research_results,
+            research=[f.as_research_report() for f in mini_findings],
             risks=risks,
             overall_risk_level=overall_risk,
             risk_score=risk_score,
             reasoning=raw.get("reasoning", ""),
         )
         context.risk_output = output
+        self._deposit_knowledge(
+            context,
+            content=f"Risk: {overall_risk.value} (score {risk_score:.2f}). {output.reasoning}",
+            topic="risk_conclusion",
+            tags=["risk"],
+            certainty_score=0.7,
+        )
 
         self._emit_message(
             context,
@@ -182,15 +226,6 @@ Risk score (0.0-1.0) represents the aggregate risk exposure."""
             },
         )
 
-
-        # --- Sub-Agent Planning & Research ---
-        research_results = await self._plan_and_research(context, user_prompt, emit_callback)
-        if research_results:
-            research_text = "Here is additional internet research gathered by your sub-agents:\n\n"
-            for r in research_results:
-                research_text += f"- Query: {r.query}\n  Certainty: {r.certainty_score}\n  Findings: {' '.join(r.findings)}\n\n"
-            user_prompt += f"\n\n{research_text}"
-        # ------------------------------------
         self.log.info(
             "risk_agent_complete",
             risk_level=overall_risk.value,

@@ -34,6 +34,9 @@ dependencies = [
     # NLP utilities
     "rank-bm25>=0.2.2",
 
+    # Live web research for mini-agent swarms
+    "duckduckgo-search>=6.1.0",
+
     # Config
     "pyyaml>=6.0",
     "python-dotenv>=1.0.0",

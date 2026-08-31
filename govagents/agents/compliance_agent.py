@@ -1,7 +1,7 @@
-from typing import Callable
 """Compliance Agent — evaluates whether the proposal satisfies policy requirements."""
 
 from __future__ import annotations
+from typing import Callable
 
 from govagents.agents.base import BaseAgent
 from govagents.core.registry import registry
@@ -12,6 +12,7 @@ from govagents.core.models import (
     ComplianceStatus,
     EvidenceStrength,
     MessageType,
+    MiniAgentTask,
     RequirementAssessment,
 )
 
@@ -54,6 +55,46 @@ Confidence levels should reflect actual certainty (0.0-1.0):
 
 You MUST respond with valid JSON following the exact schema specified."""
 
+    def mini_agent_tasks(self, context: AgentContext) -> list[MiniAgentTask]:
+        """Five parallel legal specialists, each digging into one narrow compliance angle."""
+        proposal = context.proposal
+        top_reqs = ", ".join(r.title for r in context.retrieved_requirements[:6]) or "the applicable governance requirements"
+        sector = proposal.sector or "this sector"
+
+        return [
+            self._mini_task(
+                1, "regulatory_text_mapping",
+                f"For the proposal '{proposal.title}' ({proposal.description[:300]}), find the exact current "
+                f"regulatory text and official guidance behind these requirements: {top_reqs}. "
+                "Quote specific article numbers and their precise obligations.",
+            ),
+            self._mini_task(
+                2, "enforcement_precedent",
+                f"Find real enforcement actions, regulatory fines, or case law against AI or automated systems "
+                f"comparable to '{proposal.title}' in the {sector} sector. What specifically triggered enforcement?",
+            ),
+            self._mini_task(
+                3, "cross_jurisdiction_exposure",
+                f"Identify obligations this proposal ({proposal.description[:250]}) would face under jurisdictions "
+                f"OTHER than the one implied by '{proposal.organization or 'the organization'}' — e.g. cross-border "
+                "data transfer rules, sectoral US state laws, or other regional AI regulations that could also apply.",
+            ),
+            self._mini_task(
+                4, "contractual_and_procurement_obligations",
+                f"What standard contractual, vendor, or procurement compliance obligations (DPAs, model cards, "
+                f"audit rights, liability clauses) would typically be required before deploying a system like "
+                f"'{proposal.title}'?",
+                use_web_search=True,
+            ),
+            self._mini_task(
+                5, "textual_evidence_audit",
+                f"Read this proposal closely and, for each of these requirements — {top_reqs} — extract the exact "
+                f"sentence(s) in the proposal description that support or contradict compliance, or state plainly "
+                f"that no such text exists. Proposal: {proposal.description}",
+                use_web_search=False,
+            ),
+        ]
+
     async def run(self, context: AgentContext, emit_callback: Callable = None) -> ComplianceAgentOutput:
         requirements = context.retrieved_requirements
         proposal = context.proposal
@@ -65,6 +106,9 @@ You MUST respond with valid JSON following the exact schema specified."""
                 overall_status=ComplianceStatus.UNKNOWN,
                 reasoning="No requirements were identified to assess.",
             )
+
+        # Dispatch the parallel legal specialist team before forming a judgment
+        mini_findings = await self._run_mini_swarm(context, emit_callback)
 
         # Format requirements for assessment
         req_text = self._format_requirements(requirements)
@@ -113,6 +157,10 @@ Status options: SATISFIED | PARTIALLY_SATISFIED | NOT_SATISFIED | UNKNOWN | NOT_
 
 Be thorough. Assess every requirement listed."""
 
+        mini_findings_text = self._format_mini_findings(mini_findings)
+        if mini_findings_text:
+            user_prompt += f"\n\n{mini_findings_text}"
+
         self.log.info(
             "compliance_agent_assessing", requirements=len(requirements)
         )
@@ -155,8 +203,16 @@ Be thorough. Assess every requirement listed."""
             overall_compliance_score=overall_score,
             overall_status=overall_status,
             reasoning=raw.get("reasoning", ""),
+            research=[f.as_research_report() for f in mini_findings],
         )
         context.compliance_output = output
+        self._deposit_knowledge(
+            context,
+            content=f"Compliance: {overall_status.value} (score {overall_score:.2f}). {output.reasoning}",
+            topic="compliance_conclusion",
+            tags=["compliance", "requirements"],
+            certainty_score=overall_score,
+        )
 
         self._emit_message(
             context,
